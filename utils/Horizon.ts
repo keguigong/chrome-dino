@@ -12,7 +12,11 @@ export default class Horizon {
     this.init()
   }
 
-  init() {
+  private init() {
     this.horizonLine = new HorizonLine(this.ctx, this.spriteImage)
+  }
+
+  update(deltaTime: number, speed: number) {
+    this.horizonLine.update(deltaTime, speed)
   }
 }

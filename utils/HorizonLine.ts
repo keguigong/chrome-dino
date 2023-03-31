@@ -4,8 +4,8 @@ export default class HorizonLine {
   ctx!: CanvasRenderingContext2D
   spriteImage!: CanvasImageSource
 
-  sourceDimensions = Object.assign({}, HorizonLine.dimensions)
-  dimensions = Object.assign({}, HorizonLine.dimensions)
+  sourceDimensions = { ...HorizonLine.dimensions }
+  dimensions = HorizonLine.dimensions
   spritePos = SpriteDefinition.getPositions().HORIZON
   sourceXPos = [0, HorizonLine.dimensions.WIDTH]
   xPos: number[] = []
@@ -19,11 +19,11 @@ export default class HorizonLine {
     this.draw()
   }
 
-  init() {
+  private init() {
     this.setSourceDimensions()
   }
 
-  setSourceDimensions() {
+  private setSourceDimensions() {
     if (SpriteDefinition.getIsHdpi()) {
       this.sourceDimensions.HEIGHT *= 2
       this.sourceDimensions.WIDTH *= 2
@@ -33,7 +33,7 @@ export default class HorizonLine {
     this.yPos = this.dimensions.YPOS
   }
 
-  draw() {
+  private draw() {
     this.ctx.drawImage(
       this.spriteImage,
       this.sourceXPos[0],
@@ -57,6 +57,35 @@ export default class HorizonLine {
       this.dimensions.HEIGHT
     )
   }
+
+  updateXPos(pos: number, increment: number) {
+    var line1 = pos
+    var line2 = pos == 0 ? 1 : 0
+    this.xPos[line1] -= increment
+    this.xPos[line2] = this.xPos[line1] + this.dimensions.WIDTH
+    if (this.xPos[line1] <= -this.dimensions.WIDTH) {
+      this.xPos[line1] += this.dimensions.WIDTH * 2
+      this.xPos[line2] = this.xPos[line1] - this.dimensions.WIDTH
+      this.sourceXPos[line1] = this.getRandomType()
+    }
+  }
+
+  update(deltaTime: number, speed: number) {
+    var increment = Math.floor(speed * (HorizonLine.FPS / 1000) * deltaTime)
+    if (this.xPos[0] <= 0) {
+      this.updateXPos(0, increment)
+    } else {
+      this.updateXPos(1, increment)
+    }
+    this.draw()
+  }
+
+  // Get random horizonLine type
+  getRandomType() {
+    return Math.random() > this.bumpThreshold ? this.dimensions.WIDTH : 0
+  }
+
+  static FPS = 60
 
   static dimensions = {
     WIDTH: 600,

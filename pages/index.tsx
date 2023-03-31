@@ -24,6 +24,7 @@ export default function Home() {
 
     return () => {
       console.log("---Component Destroyed----")
+      runner.stopListening()
     }
   }, [])
 
