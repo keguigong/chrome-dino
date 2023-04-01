@@ -1,8 +1,7 @@
 import Head from "next/head"
 import { useEffect, useRef, useState } from "react"
-import Trex from "@/utils/Trex"
-import HorizonLine from "@/utils/HorizonLine"
-import Runner from "@/utils/Runner"
+import Trex from "@/game-utils/Trex"
+import Runner from "@/game-utils/Runner"
 
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -28,9 +27,9 @@ export default function Home() {
     }
   }, [])
 
-  useEffect(() => {
-    console.log("2nd useEffect")
-  }, [])
+  // useEffect(() => {
+  //   console.log("2nd useEffect")
+  // }, [])
 
   return (
     <>
