@@ -6,7 +6,7 @@ export default class HorizonLine {
 
   sourceDimensions = { ...HorizonLine.dimensions }
   dimensions = HorizonLine.dimensions
-  spritePos = SpriteDefinition.getPositions().HORIZON
+  spritePos = SpriteDefinition.getPos().HORIZON
   sourceXPos = [0, HorizonLine.dimensions.WIDTH]
   xPos: number[] = []
   yPos = 0
@@ -24,7 +24,7 @@ export default class HorizonLine {
   }
 
   private setSourceDimensions() {
-    if (SpriteDefinition.getIsHdpi()) {
+    if (HorizonLine.IS_HDPI) {
       this.sourceDimensions.HEIGHT *= 2
       this.sourceDimensions.WIDTH *= 2
     }
@@ -84,6 +84,8 @@ export default class HorizonLine {
   getRandomType() {
     return Math.random() > this.bumpThreshold ? this.dimensions.WIDTH : 0
   }
+
+  static IS_HDPI = typeof window != "undefined" ? window.devicePixelRatio > 1 : false
 
   static FPS = 60
 

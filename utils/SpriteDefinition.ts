@@ -1,6 +1,4 @@
 export default class SpriteDefinition {
-  IS_HDPI = window.devicePixelRatio > 1
-
   static originals = {
     LDPI: {
       BACKGROUND_EL: { x: 86, y: 2 },
@@ -38,24 +36,10 @@ export default class SpriteDefinition {
     }
   }
 
-  private static instance: SpriteDefinition
+  static IS_HDPI = typeof window != "undefined" ? window.devicePixelRatio > 1 : false
 
-  static getIsHdpi() {
-    this.getInstance()
-    return this.instance.IS_HDPI
-  }
-
-  static getPositions() {
-    this.getInstance()
-    if (this.instance.IS_HDPI) return SpriteDefinition.originals.HDPI
+  static getPos() {
+    if (SpriteDefinition.IS_HDPI) return SpriteDefinition.originals.HDPI
     else return SpriteDefinition.originals.LDPI
-  }
-
-  static getInstance() {
-    if (!this.instance) {
-      this.instance = new SpriteDefinition()
-      return this.instance
-    }
-    return this.instance
   }
 }

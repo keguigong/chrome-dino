@@ -25,7 +25,7 @@ export default class Runner {
     this.ctx.fillStyle = "#f7f7f7"
     this.ctx.fill()
     // Load background class Horizon
-    this.horizon = new Horizon(this.ctx, this.spriteImage)
+    this.horizon = new Horizon(this.ctx, this.spriteImage, this.dimensions)
     this.update()
     this.startListening()
     this.startGame()
