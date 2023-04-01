@@ -28,6 +28,7 @@ export default class Runner {
     this.horizon = new Horizon(this.ctx, this.spriteImage)
     this.update()
     this.startListening()
+    this.startGame()
   }
 
   update() {
@@ -73,10 +74,10 @@ export default class Runner {
    * 就会执行该对象上名字为 handleEvent 的方法（如果有）。
    * MDN 上有对 handleEvent 事件的解释。
    */
-  handleEvent(e: Event) {
+  handleEvent(e: KeyboardEvent) {
     switch (e.type) {
       case Runner.events.KEYDOWN:
-        e instanceof KeyboardEvent && this.onKeydown(e)
+        this.onKeydown(e)
         break
       default:
         break
@@ -100,6 +101,36 @@ export default class Runner {
     this.playing = playing
   }
 
+  startGame() {
+    window.addEventListener(Runner.events.BLUR, this.onVisibilityChange.bind(this))
+    window.addEventListener(Runner.events.FOCUS, this.onVisibilityChange.bind(this))
+  }
+
+  onVisibilityChange(e: Event) {
+    console.log(e.type)
+    if (document.hidden || e.type === Runner.events.BLUR || document.visibilityState != "visible") {
+      this.stop()
+    } else if (!this.crashed) {
+      this.play()
+    }
+  }
+
+  play() {
+    if (!this.crashed) {
+      this.setPlayStatus(true)
+      this.paused = false
+      this.time = Date.now()
+      this.update()
+    }
+  }
+
+  stop() {
+    this.setPlayStatus(false)
+    this.paused = true
+    cancelAnimationFrame(this.raqId)
+    this.raqId = 0
+  }
+
   static defaultDimensions = {
     WIDTH: 600,
     HEIGHT: 150
@@ -114,7 +145,9 @@ export default class Runner {
   static events = {
     KEYDOWN: "keydown",
     KEYUP: "keyup",
-    LOAD: "load"
+    LOAD: "load",
+    BLUR: "blur",
+    FOCUS: "focus"
   }
 
   static config = {
