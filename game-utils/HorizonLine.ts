@@ -1,4 +1,5 @@
 import SpriteDefinition from "./SpriteDefinition"
+import { IS_HDPI } from "./varibles"
 
 export default class HorizonLine {
   ctx!: CanvasRenderingContext2D
@@ -24,7 +25,7 @@ export default class HorizonLine {
   }
 
   private setSourceDimensions() {
-    if (HorizonLine.IS_HDPI) {
+    if (IS_HDPI) {
       this.sourceDimensions.HEIGHT *= 2
       this.sourceDimensions.WIDTH *= 2
     }
@@ -84,8 +85,6 @@ export default class HorizonLine {
   getRandomType() {
     return Math.random() > this.bumpThreshold ? this.dimensions.WIDTH : 0
   }
-
-  static IS_HDPI = typeof window != "undefined" ? window.devicePixelRatio > 1 : false
 
   static FPS = 60
 

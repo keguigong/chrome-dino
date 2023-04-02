@@ -1,6 +1,5 @@
 import Cloud from "./Cloud"
 import HorizonLine from "./HorizonLine"
-import Runner from "./Runner"
 
 export default class Horizon {
   ctx!: CanvasRenderingContext2D
@@ -8,16 +7,12 @@ export default class Horizon {
 
   horizonLine!: HorizonLine
 
-  dimensions!: typeof Runner.defaultDimensions
+  dimensions!: Dimensions
   cloudFrequency = Cloud.config.CLOUD_FREQUENCY
   clouds: Cloud[] = []
   cloudSpeed = Cloud.config.BG_CLOUD_SPEED
 
-  constructor(
-    ctx: CanvasRenderingContext2D,
-    spriteImage: CanvasImageSource,
-    dimensions: typeof Runner.defaultDimensions
-  ) {
+  constructor(ctx: CanvasRenderingContext2D, spriteImage: CanvasImageSource, dimensions: Dimensions) {
     this.ctx = ctx
     this.spriteImage = spriteImage
     this.dimensions = dimensions

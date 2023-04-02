@@ -1,4 +1,5 @@
 import SpriteDefinition from "./SpriteDefinition"
+import { IS_HDPI } from "./varibles"
 
 export default class Cloud {
   ctx!: CanvasRenderingContext2D
@@ -19,16 +20,16 @@ export default class Cloud {
     this.init()
   }
 
-  init() {
+  protected init() {
     this.yPos = this.getRandomNum(Cloud.config.MIN_SKY_LEVEL, Cloud.config.MAX_SKY_LEVEL)
     this.draw()
   }
 
-  draw() {
+  protected draw() {
     this.ctx.save()
     let sourceWidth = Cloud.config.WIDTH
     let sourceHeight = Cloud.config.HEIGHT
-    if (Cloud.IS_HDPI) {
+    if (IS_HDPI) {
       sourceWidth *= 2
       sourceHeight *= 2
     }
@@ -57,25 +58,23 @@ export default class Cloud {
     }
   }
 
-  private isVisible() {
+  protected isVisible() {
     return this.xPos + Cloud.config.WIDTH > 0
   }
 
-  private getRandomNum(min: number, max: number) {
+  protected getRandomNum(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min
   }
-
-  static IS_HDPI = typeof window != "undefined" ? window.devicePixelRatio > 1 : false
 
   static config = {
     WIDTH: 46,
     HEIGHT: 14,
-    MIN_CLOUD_GAP: 100, // 云之间的最小间隙
-    MAX_CLOUD_GAP: 400, // 云之间的最大间隙
-    MIN_SKY_LEVEL: 71, // 云的最小高度
-    MAX_SKY_LEVEL: 30, // 云的最大高度
-    BG_CLOUD_SPEED: 0.2, // 云的速度
-    CLOUD_FREQUENCY: 0.5, // 云的频率
-    MAX_CLOUDS: 6 // 云的最大数量
+    MIN_CLOUD_GAP: 100,
+    MAX_CLOUD_GAP: 400,
+    MIN_SKY_LEVEL: 71,
+    MAX_SKY_LEVEL: 30,
+    BG_CLOUD_SPEED: 0.2,
+    CLOUD_FREQUENCY: 0.5,
+    MAX_CLOUDS: 6
   }
 }
