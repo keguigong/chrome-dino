@@ -7,7 +7,7 @@ export default class Runner {
 
   dimensions = Runner.defaultDimensions
   config = Runner.config
-  currentSpeed = this.config.SPEED
+  currentSpeed = Runner.config.SPEED
   time = Date.now()
   playing = false
   paused = false
@@ -25,7 +25,12 @@ export default class Runner {
     this.ctx.fillStyle = "#f7f7f7"
     this.ctx.fill()
     // Load background class Horizon
-    this.horizon = new Horizon(this.ctx, this.spriteImage, this.dimensions)
+    this.horizon = new Horizon(
+      this.ctx,
+      this.spriteImage,
+      this.dimensions,
+      this.config.GAP_COEFFICIENT
+    )
     this.update()
     this.startListening()
     this.startGame()
@@ -151,22 +156,23 @@ export default class Runner {
   }
 
   static config = {
-    ACCELERATION: 0.001,
+    SPEED: 6,
     BG_CLOUD_SPEED: 0.2,
-    BOTTOM_PAD: 10,
-    CLEAR_TIME: 3000,
     CLOUD_FREQUENCY: 0.5,
-    GAMEOVER_CLEAR_TIME: 750,
     GAP_COEFFICIENT: 0.6,
+    MAX_CLOUDS: 6,
+    MAX_SPEED: 12,
+    MAX_OBSTACLE_LENGTH: 3,
+    MAX_OBSTACLE_DUPLICATION: 2,
+    CLEAR_TIME: 3000,
+    ACCELERATION: 0.001,
+    BOTTOM_PAD: 10,
+    GAMEOVER_CLEAR_TIME: 750,
     GRAVITY: 0.6,
     INITIAL_JUMP_VELOCITY: 12,
-    MAX_CLOUDS: 6,
-    MAX_OBSTACLE_LENGTH: 3,
-    MAX_SPEED: 12,
     MIN_JUMP_HEIGHT: 35,
     MOBILE_SPEED_COEFFICIENT: 1.2,
     RESOURCE_TEMPLATE_ID: "audio-resources",
-    SPEED: 6,
     SPEED_DROP_COEFFICIENT: 3
   }
 

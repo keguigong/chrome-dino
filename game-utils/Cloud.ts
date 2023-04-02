@@ -1,5 +1,5 @@
 import SpriteDefinition from "./SpriteDefinition"
-import { IS_HDPI } from "./varibles"
+import { getRandomNum, IS_HDPI } from "./varibles"
 
 export default class Cloud {
   ctx!: CanvasRenderingContext2D
@@ -10,7 +10,7 @@ export default class Cloud {
   xPos = 0
   yPos = 0
   remove = false
-  cloudGap = this.getRandomNum(Cloud.config.MIN_CLOUD_GAP, Cloud.config.MAX_CLOUD_GAP)
+  cloudGap = getRandomNum(Cloud.config.MIN_CLOUD_GAP, Cloud.config.MAX_CLOUD_GAP)
 
   constructor(ctx: CanvasRenderingContext2D, spriteImage: CanvasImageSource, conWidth: number) {
     this.ctx = ctx
@@ -21,7 +21,7 @@ export default class Cloud {
   }
 
   protected init() {
-    this.yPos = this.getRandomNum(Cloud.config.MIN_SKY_LEVEL, Cloud.config.MAX_SKY_LEVEL)
+    this.yPos = getRandomNum(Cloud.config.MIN_SKY_LEVEL, Cloud.config.MAX_SKY_LEVEL)
     this.draw()
   }
 
@@ -60,10 +60,6 @@ export default class Cloud {
 
   protected isVisible() {
     return this.xPos + Cloud.config.WIDTH > 0
-  }
-
-  protected getRandomNum(min: number, max: number) {
-    return Math.floor(Math.random() * (max - min + 1)) + min
   }
 
   static config = {

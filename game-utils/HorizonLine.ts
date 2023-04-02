@@ -1,5 +1,5 @@
 import SpriteDefinition from "./SpriteDefinition"
-import { IS_HDPI } from "./varibles"
+import { IS_HDPI, FPS } from "./varibles"
 
 export default class HorizonLine {
   ctx!: CanvasRenderingContext2D
@@ -72,7 +72,7 @@ export default class HorizonLine {
   }
 
   update(deltaTime: number, speed: number) {
-    var increment = Math.floor(speed * (HorizonLine.FPS / 1000) * deltaTime)
+    var increment = Math.floor(speed * (FPS / 1000) * deltaTime)
     if (this.xPos[0] <= 0) {
       this.updateXPos(0, increment)
     } else {
@@ -85,8 +85,6 @@ export default class HorizonLine {
   getRandomType() {
     return Math.random() > this.bumpThreshold ? this.dimensions.WIDTH : 0
   }
-
-  static FPS = 60
 
   static dimensions = {
     WIDTH: 600,

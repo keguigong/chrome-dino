@@ -1,5 +1,8 @@
 import Cloud from "./Cloud"
 import HorizonLine from "./HorizonLine"
+import Obstacle from "./Obstacle"
+import Runner from "./Runner"
+import { getRandomNum } from "./varibles"
 
 export default class Horizon {
   ctx!: CanvasRenderingContext2D
@@ -12,10 +15,20 @@ export default class Horizon {
   clouds: Cloud[] = []
   cloudSpeed = Cloud.config.BG_CLOUD_SPEED
 
-  constructor(ctx: CanvasRenderingContext2D, spriteImage: CanvasImageSource, dimensions: Dimensions) {
+  gapCoeffecient!: number
+  obstacles!: Obstacle[]
+  obstacleHistory: string[] = []
+
+  constructor(
+    ctx: CanvasRenderingContext2D,
+    spriteImage: CanvasImageSource,
+    dimensions: Dimensions,
+    gapCoeffient: number
+  ) {
     this.ctx = ctx
     this.spriteImage = spriteImage
     this.dimensions = dimensions
+    this.gapCoeffecient = gapCoeffient
     this.init()
   }
 
@@ -55,6 +68,41 @@ export default class Horizon {
       this.clouds.filter((item) => !item.remove)
     } else {
       this.addCloud()
+    }
+  }
+
+  addNewObstacle(currentSpeed: number) {
+    let obstacleTypeIndex = getRandomNum(0, Obstacle.types.length - 1)
+    let obstacleType = Obstacle.types[obstacleTypeIndex]
+    this.obstacles.push(
+      // new Obstacle(this.ctx, this.spriteImage, null, obstacleType, this.dimensions, this.gapCoeffecient, currentSpeed)
+    )
+  }
+
+  updateObstacles(deltaTime: number, currentSpeed: number) {
+    let updateObstacles = this.obstacles.slice()
+    for (let i = 0; i < this.obstacles.length; i++) {
+      let obstacle = this.obstacles[i]
+      obstacle.update(deltaTime, currentSpeed)
+
+      if (obstacle.remove) {
+        updateObstacles.shift()
+      }
+    }
+
+    this.obstacles = updateObstacles
+    if (this.obstacles.length) {
+      let lastObstacle = this.obstacles[this.obstacles.length - 1]
+      if (
+        !lastObstacle.followingObstacleCreated &&
+        lastObstacle.isVisible() &&
+        lastObstacle.xPos + lastObstacle.width + lastObstacle.gap < this.dimensions.WIDTH
+      ) {
+        this.addNewObstacle(currentSpeed)
+        lastObstacle.followingObstacleCreated = true
+      } else {
+        this.addNewObstacle(currentSpeed)
+      }
     }
   }
 }
