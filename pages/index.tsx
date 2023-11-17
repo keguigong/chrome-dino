@@ -1,25 +1,24 @@
 import Head from "next/head"
 import { useEffect, useRef, useState } from "react"
-import Trex from "@/game-utils/Trex"
 import Runner from "@/game-utils/Runner"
 
 export default function Home() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const spriteRef = useRef<HTMLImageElement>(null)
+  const runnerContainer = useRef<HTMLDivElement>(null)
+  const runnerCanvas = useRef<HTMLCanvasElement>(null)
+  const offlineResources = useRef<HTMLImageElement>(null)
   const [rect, setRect] = useState([600, 150])
 
   useEffect(() => {
-    if (!canvasRef.current) return
-    const canvas = canvasRef.current
+    if (!runnerContainer.current) return
+    if (!runnerCanvas.current) return
+    if (!offlineResources.current) return
+
+    const canvas = runnerCanvas.current
     const ctx = canvas.getContext("2d")
     if (!ctx) return
     canvas.width = rect[0]
     canvas.height = rect[1]
-    if (!spriteRef.current) return
-    const spriteImage = spriteRef.current
-    const runner = new Runner(ctx, spriteImage)
-    const tRex = Trex.getInstance(ctx, spriteImage)
-    tRex.draw(40, 2)
+    const runner = new Runner(ctx, offlineResources.current, runnerContainer.current)
 
     return () => {
       console.log("---Component Destroyed----")
@@ -35,23 +34,15 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <canvas id="game" ref={canvasRef} width="640" height="400"></canvas>
+      <div className="interstitial-wrapper">
+        <div className="runner-container" ref={runnerContainer}>
+          <canvas className="runner-canvas" ref={runnerCanvas} width="640" height="400"></canvas>
+        </div>
+      </div>
       <div id="offline-resources">
         <img id="offline-resources-1x" src="/sprite@1x.png" alt="sprite" />
-        <img id="offline-resources-2x" src="/sprite@2x.png" alt="sprite" ref={spriteRef} />
+        <img id="offline-resources-2x" src="/sprite@2x.png" alt="sprite" ref={offlineResources} />
       </div>
-      <style jsx>
-        {`
-          #offline-resources {
-            display: none;
-          }
-
-          #game {
-            display: block;
-            margin: 0 auto;
-          }
-        `}
-      </style>
     </main>
   )
 }

@@ -74,3 +74,5 @@ export default class Cloud {
     MAX_CLOUDS: 6
   }
 }
+
+

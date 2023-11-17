@@ -58,7 +58,8 @@ export default class Obstacle {
     this.draw()
 
     if (this.typeConfig.speedOffset) {
-      this.speedOffset = Math.random() > 0.5 ? this.typeConfig.speedOffset : -this.typeConfig.speedOffset
+      this.speedOffset =
+        Math.random() > 0.5 ? this.typeConfig.speedOffset : -this.typeConfig.speedOffset
     }
 
     this.gap = this.getGap(this.gapCoefficient, speed)
@@ -97,13 +98,14 @@ export default class Obstacle {
         speed += this.speedOffset
       }
 
-      this.xPos -= Math.floor(((speed * FPS) / 1000) * Math.round(deltaTime))
+      this.xPos -= Math.floor(speed * (FPS / 1000) * deltaTime)
 
       if (this.typeConfig.numFrames) {
         this.timer += deltaTime
 
         if (this.typeConfig.frameRate && this.timer >= this.typeConfig.frameRate) {
-          this.currentFrame = this.currentFrame == this.typeConfig.numFrames - 1 ? 0 : this.currentFrame + 1
+          this.currentFrame =
+            this.currentFrame == this.typeConfig.numFrames - 1 ? 0 : this.currentFrame + 1
           this.timer = 0
         }
       }

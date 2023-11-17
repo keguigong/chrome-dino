@@ -1,4 +1,5 @@
 import Horizon from "./Horizon"
+import Trex from "./Trex"
 
 export default class Runner {
   ctx!: CanvasRenderingContext2D
@@ -15,9 +16,18 @@ export default class Runner {
   updatePending = false
   raqId = 0
 
-  constructor(ctx: CanvasRenderingContext2D, spriteImage: CanvasImageSource) {
+  containerEl!: HTMLElement
+  activated = false
+  playingIntro = false
+
+  constructor(
+    ctx: CanvasRenderingContext2D,
+    spriteImage: CanvasImageSource,
+    runnerContainer: HTMLElement
+  ) {
     this.ctx = ctx
     this.spriteImage = spriteImage
+    this.containerEl = runnerContainer
     this.init()
   }
 
@@ -33,7 +43,6 @@ export default class Runner {
     )
     this.update()
     this.startListening()
-    this.startGame()
   }
 
   update() {
@@ -44,7 +53,17 @@ export default class Runner {
 
     if (this.playing) {
       this.clearCanvas()
-      this.horizon.update(deltaTime, this.currentSpeed)
+
+      if (!this.playingIntro) {
+        this.playIntro()
+      }
+
+      if (this.playingIntro) {
+        this.horizon.update(0, this.currentSpeed)
+      } else {
+        deltaTime = !this.activated ? 0 : deltaTime
+        this.horizon.update(deltaTime, this.currentSpeed)
+      }
     }
 
     if (this.playing) {
@@ -107,9 +126,58 @@ export default class Runner {
   }
 
   startGame() {
+    this.playingIntro = false
+    this.containerEl.style.webkitAnimation = ""
+    this.setArcadeMode()
+
     window.addEventListener(Runner.events.BLUR, this.onVisibilityChange.bind(this))
     window.addEventListener(Runner.events.FOCUS, this.onVisibilityChange.bind(this))
   }
+
+  playIntro() {
+    if (!this.activated && !this.crashed) {
+      this.playingIntro = true
+
+      let keyframes = `@-webkit-keyframes intro {
+  from { width: ${Trex.config.WIDTH}px }
+  to { width: ${this.dimensions.WIDTH}px } +
+}`
+      document.styleSheets[0].insertRule(keyframes, 0)
+      this.containerEl.style.webkitAnimation = "intro .4s ease-out 1 both"
+      this.containerEl.style.width = this.dimensions.WIDTH + "px"
+      this.containerEl.addEventListener(Runner.events.ANIMATION_END, this.startGame.bind(this))
+
+      this.setPlayStatus(true)
+      this.activated = true
+    } else if (this.crashed) {
+      this.restart()
+    }
+  }
+
+  setArcadeModeContainerScale() {
+    let windowHeight = window.innerHeight
+    let scaleHeight = windowHeight / this.dimensions.HEIGHT
+    let scaleWidth = window.innerWidth / this.dimensions.WIDTH
+    let scale = Math.max(1, Math.min(scaleHeight, scaleWidth))
+    let scaledCanvasHeight = this.dimensions.HEIGHT * scale
+
+    let translateY =
+      Math.ceil(
+        Math.max(
+          0,
+          (windowHeight - scaledCanvasHeight - Runner.config.ARCADE_MODE_INITIAL_TOP_POSITION) *
+            Runner.config.ARCADE_MODE_TOP_POSITION_PERCENT
+        )
+      ) * window.devicePixelRatio
+    this.containerEl.style.transform = "scale(" + scale + ") translateY(" + translateY + "px)"
+  }
+
+  setArcadeMode() {
+    document.body.classList.add(Runner.classes.ARCADE_MODE)
+    this.setArcadeModeContainerScale()
+  }
+
+  restart() {}
 
   onVisibilityChange(e: Event) {
     console.log(e.type)
@@ -152,7 +220,12 @@ export default class Runner {
     KEYUP: "keyup",
     LOAD: "load",
     BLUR: "blur",
-    FOCUS: "focus"
+    FOCUS: "focus",
+    ANIMATION_END: "webkitAnimationEnd"
+  }
+
+  static classes = {
+    ARCADE_MODE: "arcade-mode"
   }
 
   static config = {
@@ -173,14 +246,20 @@ export default class Runner {
     MIN_JUMP_HEIGHT: 35,
     MOBILE_SPEED_COEFFICIENT: 1.2,
     RESOURCE_TEMPLATE_ID: "audio-resources",
-    SPEED_DROP_COEFFICIENT: 3
+    SPEED_DROP_COEFFICIENT: 3,
+    ARCADE_MODE_INITIAL_TOP_POSITION: 35,
+    ARCADE_MODE_TOP_POSITION_PERCENT: 0.1
   }
 
   private static instance: Runner
   /** Get singleton instance */
-  static getInstance(ctx: CanvasRenderingContext2D, spriteImage: CanvasImageSource) {
+  static getInstance(
+    ctx: CanvasRenderingContext2D,
+    spriteImage: CanvasImageSource,
+    runnerContainer: HTMLElement
+  ) {
     if (!this.instance) {
-      this.instance = new Runner(ctx, spriteImage)
+      this.instance = new Runner(ctx, spriteImage, runnerContainer)
       return this.instance
     }
     return this.instance
