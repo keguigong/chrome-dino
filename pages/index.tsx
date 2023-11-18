@@ -2,6 +2,8 @@ import Head from "next/head"
 import { useEffect } from "react"
 import Runner from "@/game-utils/Runner"
 
+const assetPrefix = process.env.NODE_ENV === "production" ? "/chrome-dino" : ""
+
 export default function Home() {
   useEffect(() => {
     const runner = Runner.getInstance("#main-frame-error")
@@ -26,8 +28,8 @@ export default function Home() {
         </div>
       </div>
       <div id="offline-resources">
-        <img id="offline-resources-1x" src="/sprite@1x.png" alt="offline-resources-1x" />
-        <img id="offline-resources-2x" src="/sprite@2x.png" alt="offline-resources-2x" />
+        <img id="offline-resources-1x" src={`${assetPrefix}/sprite@1x.png`} alt="offline-resources-1x" />
+        <img id="offline-resources-2x" src={`${assetPrefix}/sprite@2x.png`} alt="offline-resources-2x" />
       </div>
     </>
   )
