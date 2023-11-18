@@ -1,22 +1,27 @@
-import SpriteDefinition from "./SpriteDefinition"
-import { getRandomNum, IS_HDPI } from "./varibles"
+import Runner from "./Runner"
+import { getRandomNum, IS_HIDPI } from "./varibles"
 
 export default class Cloud {
+  canvas!: HTMLCanvasElement
   ctx!: CanvasRenderingContext2D
-  spriteImage!: CanvasImageSource
-  spritePos = SpriteDefinition.getPos().CLOUD
-  conWidth!: number
+  spritePos!: Position
+  containerWidth!: number
 
-  xPos = 0
-  yPos = 0
-  remove = false
-  cloudGap = getRandomNum(Cloud.config.MIN_CLOUD_GAP, Cloud.config.MAX_CLOUD_GAP)
+  xPos!: number
+  yPos!: number
+  remove!: boolean
+  cloudGap!: number
 
-  constructor(ctx: CanvasRenderingContext2D, spriteImage: CanvasImageSource, conWidth: number) {
-    this.ctx = ctx
-    this.spriteImage = spriteImage
-    this.conWidth = conWidth
-    this.xPos = conWidth
+  constructor(canvas: HTMLCanvasElement, spritePos: Position, containerWidth: number) {
+    this.canvas = canvas
+    this.ctx = canvas.getContext("2d") as CanvasRenderingContext2D
+    this.spritePos = spritePos
+    this.containerWidth = containerWidth
+    this.xPos = containerWidth
+    this.yPos = 0
+    this.remove = false
+    this.cloudGap = getRandomNum(Cloud.config.MIN_CLOUD_GAP, Cloud.config.MAX_CLOUD_GAP)
+
     this.init()
   }
 
@@ -29,12 +34,12 @@ export default class Cloud {
     this.ctx.save()
     let sourceWidth = Cloud.config.WIDTH
     let sourceHeight = Cloud.config.HEIGHT
-    if (IS_HDPI) {
+    if (IS_HIDPI) {
       sourceWidth *= 2
       sourceHeight *= 2
     }
     this.ctx.drawImage(
-      this.spriteImage,
+      Runner.imageSprite,
       this.spritePos.x,
       this.spritePos.y,
       sourceWidth,

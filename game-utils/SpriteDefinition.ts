@@ -1,3 +1,4 @@
+import { IS_HIDPI } from "./varibles"
 export default class SpriteDefinition {
   static originals = {
     LDPI: {
@@ -36,10 +37,8 @@ export default class SpriteDefinition {
     }
   }
 
-  static IS_HDPI = typeof window != "undefined" ? window.devicePixelRatio > 1 : false
-
-  static getPos() {
-    if (SpriteDefinition.IS_HDPI) return SpriteDefinition.originals.HDPI
+  static getPos(): { [key: string]: any } {
+    if (IS_HIDPI) return SpriteDefinition.originals.HDPI
     else return SpriteDefinition.originals.LDPI
   }
 }
