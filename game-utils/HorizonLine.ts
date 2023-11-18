@@ -1,21 +1,24 @@
-import SpriteDefinition from "./SpriteDefinition"
-import { IS_HDPI, FPS } from "./varibles"
+import Runner from "./Runner"
+import { IS_HIDPI, FPS } from "./varibles"
 
 export default class HorizonLine {
+  canvas!: HTMLCanvasElement
   ctx!: CanvasRenderingContext2D
-  spriteImage!: CanvasImageSource
 
   sourceDimensions = { ...HorizonLine.dimensions }
   dimensions = HorizonLine.dimensions
-  spritePos = SpriteDefinition.getPos().HORIZON
+  spritePos!: Position
   sourceXPos = [0, HorizonLine.dimensions.WIDTH]
   xPos: number[] = []
   yPos = 0
   bumpThreshold = 0.5
 
-  constructor(ctx: CanvasRenderingContext2D, spriteImage: CanvasImageSource) {
-    this.ctx = ctx
-    this.spriteImage = spriteImage
+  constructor(canvas: HTMLCanvasElement, spritePos: Position) {
+    this.canvas = canvas
+    this.ctx = canvas.getContext("2d") as CanvasRenderingContext2D
+
+    this.spritePos = spritePos
+
     this.init()
     this.draw()
   }
@@ -25,7 +28,7 @@ export default class HorizonLine {
   }
 
   private setSourceDimensions() {
-    if (IS_HDPI) {
+    if (IS_HIDPI) {
       this.sourceDimensions.HEIGHT *= 2
       this.sourceDimensions.WIDTH *= 2
     }
@@ -36,7 +39,7 @@ export default class HorizonLine {
 
   private draw() {
     this.ctx.drawImage(
-      this.spriteImage,
+      Runner.imageSprite,
       this.sourceXPos[0],
       this.spritePos.y,
       this.sourceDimensions.WIDTH,
@@ -47,7 +50,7 @@ export default class HorizonLine {
       this.dimensions.HEIGHT
     )
     this.ctx.drawImage(
-      this.spriteImage,
+      Runner.imageSprite,
       this.sourceXPos[1],
       this.spritePos.y,
       this.sourceDimensions.WIDTH,

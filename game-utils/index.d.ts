@@ -1,25 +1,20 @@
-declare interface Position {
+declare type Position = {
   x: number
   y: number
 }
 
-declare interface Dimensions {
+declare type Dimensions = {
   WIDTH: number
   HEIGHT: number
   [key: string]: number
 }
 
-declare namespace Obstacle {
-  interface Type {
-    type: string
-    width: number
-    height: number
-    yPos: number
-    multipleSpeed: number
-    minGap: number
-    minSpeed: number
-    numFrames?: number
-    frameRate?: number
-    speedOffset?: number
-  }
+declare type SpritePosDef = {
+  [key: string]: Position
 }
+
+declare type ConfigDict = {
+  [key: string]: any
+}
+
+declare type SpriteDefinition = ConfigDict

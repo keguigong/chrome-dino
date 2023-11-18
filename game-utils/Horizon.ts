@@ -5,45 +5,53 @@ import Runner from "./Runner"
 import { getRandomNum } from "./varibles"
 
 export default class Horizon {
+  canvas!: HTMLCanvasElement
   ctx!: CanvasRenderingContext2D
   spriteImage!: CanvasImageSource
+  spritePos!: SpritePosDef
 
   horizonLine!: HorizonLine
-
   dimensions!: Dimensions
-  cloudFrequency = Cloud.config.CLOUD_FREQUENCY
-  clouds: Cloud[] = []
-  cloudSpeed = Cloud.config.BG_CLOUD_SPEED
+  cloudFrequency!: number
+  clouds!: Cloud[]
+  cloudSpeed!: number
 
   gapCoeffecient!: number
   obstacles!: Obstacle[]
-  obstacleHistory: string[] = []
+  obstacleHistory!: string[]
 
-  constructor(
-    ctx: CanvasRenderingContext2D,
-    spriteImage: CanvasImageSource,
-    dimensions: Dimensions,
-    gapCoeffient: number
-  ) {
-    this.ctx = ctx
-    this.spriteImage = spriteImage
+  constructor(canvas: HTMLCanvasElement, spritePos: SpritePosDef, dimensions: Dimensions, gapCoeffient: number) {
+    this.canvas = canvas
+    this.ctx = canvas.getContext("2d") as CanvasRenderingContext2D
+    this.spritePos = spritePos
     this.dimensions = dimensions
     this.gapCoeffecient = gapCoeffient
+
+    this.obstacles = []
+    this.obstacleHistory = []
+
+    this.cloudFrequency = Cloud.config.CLOUD_FREQUENCY
+    this.cloudSpeed = Cloud.config.BG_CLOUD_SPEED
+    this.clouds = []
+
     this.init()
   }
 
   private init() {
     this.addCloud()
-    this.horizonLine = new HorizonLine(this.ctx, this.spriteImage)
+    this.horizonLine = new HorizonLine(this.canvas, this.spritePos.HORIZON)
   }
 
-  update(deltaTime: number, speed: number) {
+  update(deltaTime: number, speed: number, hasObstacles?: boolean) {
     this.horizonLine.update(deltaTime, speed)
     this.updateCloud(deltaTime, speed)
+    if (hasObstacles) {
+      this.updateObstacles(deltaTime, speed)
+    }
   }
 
   addCloud() {
-    this.clouds.push(new Cloud(this.ctx, this.spriteImage, this.dimensions.WIDTH))
+    this.clouds.push(new Cloud(this.canvas, this.spritePos.CLOUD, this.dimensions.WIDTH))
   }
 
   updateCloud(deltaTime: number, speed: number) {
@@ -65,22 +73,50 @@ export default class Horizon {
         this.addCloud()
       }
 
-      this.clouds.filter((item) => !item.remove)
+      this.clouds = this.clouds.filter((obj) => !obj.remove)
     } else {
       this.addCloud()
     }
   }
 
   addNewObstacle(currentSpeed: number) {
+    // Random obstacles
     let obstacleTypeIndex = getRandomNum(0, Obstacle.types.length - 1)
     let obstacleType = Obstacle.types[obstacleTypeIndex]
-    this.obstacles.push(
-      // new Obstacle(this.ctx, this.spriteImage, null, obstacleType, this.dimensions, this.gapCoeffecient, currentSpeed)
-    )
+    if (this.duplicateObstacleCheck(obstacleType.type) || currentSpeed < obstacleType.minSpeed) {
+      this.addNewObstacle(currentSpeed)
+    } else {
+      let obstacleSpritePos = this.spritePos[obstacleType.type]
+
+      this.obstacles.push(
+        new Obstacle(
+          this.canvas,
+          obstacleSpritePos,
+          obstacleType,
+          this.dimensions,
+          this.gapCoeffecient,
+          currentSpeed,
+          obstacleType.width
+        )
+      )
+      this.obstacleHistory.unshift(obstacleType.type)
+
+      if (this.obstacleHistory.length > 1) {
+        this.obstacleHistory.splice(Runner.config.MAX_OBSTACLE_DUPLICATION)
+      }
+    }
+  }
+
+  duplicateObstacleCheck(nextObstacleType: string) {
+    let duplicateCount = 0
+    for (let i = 0; i < this.obstacleHistory.length; i++) {
+      duplicateCount = this.obstacleHistory[i] == nextObstacleType ? duplicateCount + 1 : 0
+    }
+    return duplicateCount >= Runner.config.MAX_OBSTACLE_DUPLICATION
   }
 
   updateObstacles(deltaTime: number, currentSpeed: number) {
-    let updateObstacles = this.obstacles.slice()
+    let updateObstacles = this.obstacles.slice(0)
     for (let i = 0; i < this.obstacles.length; i++) {
       let obstacle = this.obstacles[i]
       obstacle.update(deltaTime, currentSpeed)
@@ -100,9 +136,9 @@ export default class Horizon {
       ) {
         this.addNewObstacle(currentSpeed)
         lastObstacle.followingObstacleCreated = true
-      } else {
-        this.addNewObstacle(currentSpeed)
       }
+    } else {
+      this.addNewObstacle(currentSpeed)
     }
   }
 }
