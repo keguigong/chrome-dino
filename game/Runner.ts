@@ -41,6 +41,8 @@ export default class Runner {
   distanceRan = 0
   highestScore = 0
 
+  tRex!: Trex
+
   constructor(outerContainerId: string, optConfig?: ConfigDict) {
     this.outerContainerEl = document.querySelector(outerContainerId)!
     this.config = optConfig || Object.assign(Runner.config, Runner.normalConfig)
@@ -91,6 +93,7 @@ export default class Runner {
     this.horizon = new Horizon(this.canvas, this.spriteDef, this.dimensions, this.config.GAP_COEFFICIENT)
 
     this.distanceMeter = new DistanceMeter(this.canvas, this.spriteDef.TEXT_SPRITE, this.dimensions.WIDTH)
+    this.tRex = new Trex(this.canvas, this.spriteDef.TREX)
 
     this.startListening()
     this.update()
@@ -155,10 +158,14 @@ export default class Runner {
     if (this.playing) {
       this.clearCanvas()
 
+      if (this.tRex.jumping) {
+        this.tRex.updateJump(deltaTime)
+      }
+
       this.runningTime += deltaTime
       let hasObstacles = this.runningTime > Runner.config.CLEAR_TIME
 
-      if (!this.playingIntro) {
+      if (!this.playingIntro && this.tRex.jumpCount === 1) {
         this.playIntro()
       }
 
@@ -203,7 +210,9 @@ export default class Runner {
       }
     }
 
-    if (this.playing) {
+    if (this.playing || (!this.activated && this.tRex.blinkCount < Runner.config.MAX_BLINK_COUNT)) {
+      this.tRex.update(deltaTime)
+
       this.scheduleNextUpdate()
     }
   }
@@ -225,6 +234,7 @@ export default class Runner {
   playIntro() {
     if (!this.activated && !this.crashed) {
       this.playingIntro = true
+      this.tRex.playingIntro = true
 
       let keyframes = `@-webkit-keyframes intro {
           from { width: ${Trex.config.WIDTH}px }
@@ -249,6 +259,8 @@ export default class Runner {
     if (this.isArcadeMode()) {
       this.setArcadeMode()
     }
+
+    this.tRex.playingIntro = false
     this.runningTime = 0
     this.playingIntro = false
     this.containerEl.style.webkitAnimation = ""
@@ -364,24 +376,50 @@ export default class Runner {
     const evtType = e.type
     switch (evtType) {
       case Runner.events.KEYDOWN:
-      case Runner.events.TOUCHSTART:
-      case Runner.events.KEYDOWN:
         this.onKeydown(e)
+        break
+      case Runner.events.KEYUP:
+        this.onKeyUp(e)
         break
     }
   }
 
   onKeydown(e: KeyboardEvent) {
     if (!this.crashed && !this.paused) {
-      if (Runner.keycodes.JUMP[e.code]) {
+      if (Runner.keycodes.JUMP[e.keyCode]) {
         e.preventDefault()
 
         if (!this.playing) {
           this.setPlayStatus(true)
           this.update()
         }
+
+        if (!this.tRex.jumping && !this.tRex.ducking) {
+          this.tRex.startJump(this.currentSpeed)
+        }
+      } else if (this.playing && Runner.keycodes.DUCK[e.keyCode]) {
+        e.preventDefault()
+
+        if (this.tRex.jumping) {
+          this.tRex.setSpeedDrop()
+        } else if (!this.tRex.jumping && !this.tRex.ducking) {
+          this.tRex.setDuck(true)
+        }
       }
     }
+  }
+
+  onKeyUp(e: KeyboardEvent) {
+    if (this.isRunning() && Runner.keycodes.JUMP[e.keyCode]) {
+      this.tRex.endJump()
+    } else if (Runner.keycodes.DUCK[e.keyCode]) {
+      this.tRex.speedDrop = false
+      this.tRex.setDuck(false)
+    }
+  }
+
+  isRunning() {
+    return !!this.raqId
   }
 
   stop() {
@@ -397,6 +435,7 @@ export default class Runner {
       this.paused = false
       this.time = Date.now()
       this.update()
+      this.tRex.reset()
     }
   }
 
@@ -481,9 +520,9 @@ export default class Runner {
   }
 
   static keycodes = {
-    JUMP: { ArrowUp: 1, Space: 1 } as any, // Up, spacebar
-    DUCK: { ArrowDown: 1 } as any, // Down
-    RESTART: { Enter: 1 } as any // Enter
+    JUMP: { 38: 1, 32: 1 } as any, // Up, spacebar
+    DUCK: { 40: 1 } as any, // Down
+    RESTART: { 13: 1 } as any // Enter
   }
 
   /**
@@ -521,7 +560,7 @@ export default class Runner {
     AUDIOCUE_PROXIMITY_THRESHOLD: 190,
     AUDIOCUE_PROXIMITY_THRESHOLD_MOBILE_A11Y: 250,
     GAP_COEFFICIENT: 0.6,
-    INVERT_DISTANCE: 100,
+    INVERT_DISTANCE: 700,
     MAX_SPEED: 13,
     MOBILE_SPEED_COEFFICIENT: 1.2,
     SPEED: 6
