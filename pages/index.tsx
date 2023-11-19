@@ -1,6 +1,6 @@
 import Head from "next/head"
 import { useEffect } from "react"
-import Runner from "@/game-utils/Runner"
+import Runner from "@/game/Runner"
 
 const assetPrefix = process.env.NODE_ENV === "production" ? "/chrome-dino" : ""
 
