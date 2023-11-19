@@ -307,16 +307,15 @@ export default class Runner {
   }
 
   /** addEventListener default method */
-  handleEvent(e: KeyboardEvent) {
-    return function (evtType: string) {
-      switch (evtType) {
-        case Runner.events.KEYDOWN:
-        case Runner.events.TOUCHSTART:
-        case Runner.events.KEYDOWN:
-          this.onKeydown(e)
-          break
-      }
-    }.bind(this)(e.type)
+  handleEvent = (e: KeyboardEvent) => {
+    const evtType = e.type
+    switch (evtType) {
+      case Runner.events.KEYDOWN:
+      case Runner.events.TOUCHSTART:
+      case Runner.events.KEYDOWN:
+        this.onKeydown(e)
+        break
+    }
   }
 
   onKeydown(e: KeyboardEvent) {
