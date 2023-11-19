@@ -3,6 +3,7 @@ import Horizon from "./Horizon"
 import Trex from "./Trex"
 import { IS_HIDPI, IS_MOBILE, RESOURCE_POSTFIX } from "./varibles"
 
+const DEFAULT_WIDTH = 600
 export default class Runner {
   spriteDef!: SpritePosDef
 
@@ -24,6 +25,7 @@ export default class Runner {
   crashed!: boolean
   paused!: boolean
   updatePending!: boolean
+  resizeTimerId_!: NodeJS.Timer | null
 
   raqId!: number
 
@@ -45,6 +47,7 @@ export default class Runner {
     this.crashed = false
     this.paused = false
     this.updatePending = false
+    this.resizeTimerId_ = null
 
     this.raqId = 0
 
@@ -68,6 +71,8 @@ export default class Runner {
   }
 
   init() {
+    this.adjustDimensions()
+
     // this.containerEl = document.createElement("div")
     this.containerEl = document.querySelector(`.${Runner.classes.CONTAINER}`) as HTMLDivElement
     this.containerEl.setAttribute("role", IS_MOBILE ? "button" : "application")
@@ -85,7 +90,7 @@ export default class Runner {
     this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D
     this.ctx.fillStyle = "#f7f7f7"
     this.ctx.fill()
-    this.updateCanvasScaling(this.canvas)
+    Runner.updateCanvasScaling(this.canvas)
     // Load background class Horizon
     this.horizon = new Horizon(this.canvas, this.spriteDef, this.dimensions, Runner.config.GAP_COEFFICIENT)
 
@@ -93,6 +98,56 @@ export default class Runner {
 
     this.startListening()
     this.update()
+
+    window.addEventListener(Runner.events.RESIZE, this.debounceResize.bind(this))
+  }
+
+  /**
+   * Debounce the resize event.
+   */
+  debounceResize() {
+    if (!this.resizeTimerId_) {
+      this.resizeTimerId_ = setInterval(this.adjustDimensions.bind(this), 250)
+    }
+  }
+
+  adjustDimensions() {
+    this.resizeTimerId_ && clearInterval(this.resizeTimerId_)
+    this.resizeTimerId_ = null
+
+    if (typeof window === "undefined") return
+    const boxStyles = window.getComputedStyle(this.outerContainerEl)
+    const padding = Number(boxStyles.paddingLeft.substr(0, boxStyles.paddingLeft.length - 2))
+
+    this.dimensions.WIDTH = this.outerContainerEl.offsetWidth - padding * 2
+    if (this.isArcadeMode()) {
+      this.dimensions.WIDTH = Math.min(DEFAULT_WIDTH, this.dimensions.WIDTH)
+      if (this.activated) {
+        this.setArcadeModeContainerScale()
+      }
+    }
+
+    if (this.canvas) {
+      this.canvas.width = this.dimensions.WIDTH
+      this.canvas.height = this.dimensions.HEIGHT
+
+      Runner.updateCanvasScaling(this.canvas)
+
+      this.clearCanvas()
+      this.horizon.update(0, 0, true)
+
+      // Outer container and distance meter.
+      if (this.playing || this.crashed || this.paused) {
+        this.containerEl.style.width = this.dimensions.WIDTH + "px"
+        this.containerEl.style.height = this.dimensions.HEIGHT + "px"
+        // this.stop()
+      }
+
+      // Game over panel.
+      // if (this.crashed) {
+
+      // }
+    }
   }
 
   update() {
@@ -128,10 +183,9 @@ export default class Runner {
     }
   }
 
-  clearCanvas() {
-    this.ctx.clearRect(0, 0, this.dimensions.WIDTH, this.dimensions.HEIGHT)
-  }
-
+  /**
+   * RequestAnimationFrame wrapper.
+   */
   scheduleNextUpdate() {
     if (!this.updatePending) {
       this.updatePending = true
@@ -139,40 +193,61 @@ export default class Runner {
     }
   }
 
-  startGame() {
-    this.playingIntro = false
-    this.containerEl.style.webkitAnimation = ""
-    this.setArcadeMode()
-
-    this.runningTime = 0
-    this.playingIntro = false
-
-    window.addEventListener(Runner.events.BLUR, this.onVisibilityChange.bind(this))
-    window.addEventListener(Runner.events.FOCUS, this.onVisibilityChange.bind(this))
-  }
-
-  setPlayStatus(playing: boolean) {
-    this.playing = playing
-  }
-
+  /**
+   * Play the game intro.
+   * Canvas container width expands out to the full width.
+   */
   playIntro() {
     if (!this.activated && !this.crashed) {
       this.playingIntro = true
 
       let keyframes = `@-webkit-keyframes intro {
-        from { width: ${Trex.config.WIDTH}px }
-        to { width: ${this.dimensions.WIDTH}px } +
-      }`
+          from { width: ${Trex.config.WIDTH}px }
+          to { width: ${this.dimensions.WIDTH}px } +
+        }`
       document.styleSheets[0].insertRule(keyframes, 0)
       this.containerEl.style.webkitAnimation = "intro .4s ease-out 1 both"
       this.containerEl.style.width = this.dimensions.WIDTH + "px"
-      this.containerEl.addEventListener(Runner.events.ANIMATION_END, this.startGame.bind(this))
+      this.containerEl.addEventListener(Runner.events.ANIM_END, this.startGame.bind(this))
 
       this.setPlayStatus(true)
       this.activated = true
     } else if (this.crashed) {
       this.restart()
     }
+  }
+
+  /**
+   * Update the game status to started.
+   */
+  startGame() {
+    if (this.isArcadeMode()) {
+      this.setArcadeMode()
+    }
+    this.runningTime = 0
+    this.playingIntro = false
+    this.containerEl.style.webkitAnimation = ""
+
+    window.addEventListener(Runner.events.BLUR, this.onVisibilityChange.bind(this))
+    window.addEventListener(Runner.events.FOCUS, this.onVisibilityChange.bind(this))
+  }
+
+  clearCanvas() {
+    this.ctx.clearRect(0, 0, this.dimensions.WIDTH, this.dimensions.HEIGHT)
+  }
+
+  setPlayStatus(playing: boolean) {
+    this.playing = playing
+  }
+
+  isArcadeMode() {
+    return true
+  }
+
+  /** Hides offline messaging for a fullscreen game only experience. */
+  setArcadeMode() {
+    document.body.classList.add(Runner.classes.ARCADE_MODE)
+    this.setArcadeModeContainerScale()
   }
 
   /** Set arcade mode container scaling when start acade mode  */
@@ -194,13 +269,105 @@ export default class Runner {
     this.containerEl.style.transform = "scale(" + scale + ") translateY(" + translateY + "px)"
   }
 
-  setArcadeMode() {
-    document.body.classList.add(Runner.classes.ARCADE_MODE)
-    this.setArcadeModeContainerScale()
+  restart() {
+    if (!this.raqId) {
+      this.runningTime = 0
+      this.setPlayStatus(true)
+      this.paused = false
+      this.crashed = false
+    }
   }
 
-  /** Update canvas scale based on devicePixelRatio */
-  updateCanvasScaling(canvas: HTMLCanvasElement, opt_width?: number, opt_height?: number) {
+  onVisibilityChange(e: Event) {
+    console.log(e.type)
+    if (document.hidden || e.type === Runner.events.BLUR || document.visibilityState != "visible") {
+      this.stop()
+    } else if (!this.crashed) {
+      this.play()
+    }
+  }
+
+  /** Listen to events */
+  startListening() {
+    // Keys.
+    document.addEventListener(Runner.events.KEYDOWN, this)
+    document.addEventListener(Runner.events.KEYUP, this)
+
+    // Touch / pointer.
+    this.containerEl.addEventListener(Runner.events.TOUCHSTART, this)
+    document.addEventListener(Runner.events.POINTERDOWN, this)
+    document.addEventListener(Runner.events.POINTERUP, this)
+  }
+
+  stopListening() {
+    console.log("stop")
+
+    document.removeEventListener(Runner.events.KEYDOWN, this)
+    document.removeEventListener(Runner.events.KEYUP, this)
+  }
+
+  /** addEventListener default method */
+  handleEvent = (e: KeyboardEvent) => {
+    const evtType = e.type
+    switch (evtType) {
+      case Runner.events.KEYDOWN:
+      case Runner.events.TOUCHSTART:
+      case Runner.events.KEYDOWN:
+        this.onKeydown(e)
+        break
+    }
+  }
+
+  onKeydown(e: KeyboardEvent) {
+    if (!this.crashed && !this.paused) {
+      if (Runner.keycodes.JUMP[e.code]) {
+        e.preventDefault()
+
+        if (!this.playing) {
+          this.setPlayStatus(true)
+          this.update()
+        }
+      }
+    }
+  }
+
+  stop() {
+    this.setPlayStatus(false)
+    this.paused = true
+    cancelAnimationFrame(this.raqId)
+    this.raqId = 0
+  }
+
+  play() {
+    if (!this.crashed) {
+      this.setPlayStatus(true)
+      this.paused = false
+      this.time = Date.now()
+      this.update()
+    }
+  }
+
+  private static _instance: Runner
+
+  static getInstance(outerContainerId: string, optConfig?: any) {
+    if (Runner._instance) {
+      Runner._instance.init()
+      return Runner._instance
+    }
+    Runner._instance = new Runner(outerContainerId, optConfig)
+    return Runner._instance
+  }
+
+  /** Default canvas dimensions */
+  static defaultDimensions = {
+    WIDTH: 600,
+    HEIGHT: 150
+  }
+
+  /**
+   * Update canvas scale based on devicePixelRatio
+   */
+  static updateCanvasScaling(canvas: HTMLCanvasElement, opt_width?: number, opt_height?: number) {
     const context = canvas.getContext("2d") as CanvasRenderingContext2D
     // Query the various pixel ratios
     const devicePixelRatio = Math.floor(window.devicePixelRatio) || 1
@@ -231,97 +398,21 @@ export default class Runner {
     return false
   }
 
-  restart() {}
-
-  onVisibilityChange(e: Event) {
-    console.log(e.type)
-    if (document.hidden || e.type === Runner.events.BLUR || document.visibilityState != "visible") {
-      this.stop()
-    } else if (!this.crashed) {
-      this.play()
-    }
-  }
-
-  /** Listen to events */
-  startListening() {
-    console.log("start")
-
-    document.addEventListener(Runner.events.KEYDOWN, this)
-    document.addEventListener(Runner.events.KEYUP, this)
-  }
-
-  stopListening() {
-    console.log("stop")
-
-    document.removeEventListener(Runner.events.KEYDOWN, this)
-    document.removeEventListener(Runner.events.KEYUP, this)
-  }
-
-  /** addEventListener default method */
-  handleEvent(e: KeyboardEvent) {
-    switch (e.type) {
-      case Runner.events.KEYDOWN:
-        this.onKeydown(e)
-        break
-      default:
-        break
-    }
-  }
-
-  onKeydown(e: KeyboardEvent) {
-    if (!this.crashed && !this.paused) {
-      if (Runner.keycodes.JUMP[e.code]) {
-        e.preventDefault()
-
-        if (!this.playing) {
-          this.setPlayStatus(true)
-          this.update()
-        }
-      }
-    }
-  }
-
-  play() {
-    if (!this.crashed) {
-      this.setPlayStatus(true)
-      this.paused = false
-      this.time = Date.now()
-      this.update()
-    }
-  }
-
-  stop() {
-    this.setPlayStatus(false)
-    this.paused = true
-    cancelAnimationFrame(this.raqId)
-    this.raqId = 0
-  }
-
-  private static _instance: Runner
-
-  static getInstance(outerContainerId: string, optConfig?: any) {
-    if (Runner._instance) {
-      Runner._instance.init()
-      return Runner._instance
-    }
-    Runner._instance = new Runner(outerContainerId, optConfig)
-    return Runner._instance
-  }
-
-  /** Default canvas dimensions */
-  static defaultDimensions = {
-    WIDTH: 600,
-    HEIGHT: 150
-  }
-
-  /** Set of events */
   static events = {
+    ANIM_END: "webkitAnimationEnd",
+    CLICK: "click",
     KEYDOWN: "keydown",
     KEYUP: "keyup",
-    LOAD: "load",
+    POINTERDOWN: "pointerdown",
+    POINTERUP: "pointerup",
+    RESIZE: "resize",
+    TOUCHEND: "touchend",
+    TOUCHSTART: "touchstart",
+    VISIBILITY: "visibilitychange",
     BLUR: "blur",
     FOCUS: "focus",
-    ANIMATION_END: "webkitAnimationEnd"
+    LOAD: "load",
+    GAMEPADCONNECTED: "gamepadconnected"
   }
 
   static classes = {
@@ -336,7 +427,6 @@ export default class Runner {
     TOUCH_CONTROLLER: "controller"
   }
 
-  /** Set of keycodes controling interactivation */
   static keycodes = {
     JUMP: { ArrowUp: 1, Space: 1 } as any, // Up, spacebar
     DUCK: { ArrowDown: 1 } as any, // Down
