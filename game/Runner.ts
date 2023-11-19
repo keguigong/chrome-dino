@@ -25,6 +25,9 @@ export default class Runner {
   playing = false
   crashed = false
   paused = false
+  inverted = false // Night mode on
+  inverTimer = 0 // Night mode start time
+  invertTrigger = false
   updatePending = false
   resizeTimerId_: NodeJS.Timer | null = null
 
@@ -40,7 +43,7 @@ export default class Runner {
 
   constructor(outerContainerId: string, optConfig?: ConfigDict) {
     this.outerContainerEl = document.querySelector(outerContainerId)!
-    this.config = optConfig || Runner.config
+    this.config = optConfig || Object.assign(Runner.config, Runner.normalConfig)
 
     this.loadImages()
   }
@@ -85,7 +88,7 @@ export default class Runner {
     this.outerContainerEl.appendChild(this.containerEl)
 
     // Load background class Horizon
-    this.horizon = new Horizon(this.canvas, this.spriteDef, this.dimensions, Runner.config.GAP_COEFFICIENT)
+    this.horizon = new Horizon(this.canvas, this.spriteDef, this.dimensions, this.config.GAP_COEFFICIENT)
 
     this.distanceMeter = new DistanceMeter(this.canvas, this.spriteDef.TEXT_SPRITE, this.dimensions.WIDTH)
 
@@ -159,19 +162,45 @@ export default class Runner {
         this.playIntro()
       }
 
+      // The horizon doesn't move until the intro is over.
       if (this.playingIntro) {
         this.horizon.update(0, this.currentSpeed, hasObstacles)
-      } else {
+      } else if (!this.crashed) {
         deltaTime = !this.activated ? 0 : deltaTime
-        this.horizon.update(deltaTime, this.currentSpeed, hasObstacles)
+        this.horizon.update(deltaTime, this.currentSpeed, hasObstacles, this.inverted)
       }
 
-      if (this.currentSpeed < Runner.config.MAX_SPEED) {
-        this.currentSpeed += Runner.config.ACCELERATION
+      if (this.currentSpeed < this.config.MAX_SPEED) {
+        this.currentSpeed += this.config.ACCELERATION
       }
 
       this.distanceRan += (this.currentSpeed * deltaTime) / this.msPerFrame
-      let playAchievementSound = this.distanceMeter?.update(deltaTime, Math.ceil(this.distanceRan))
+      let playAchievementSound = this.distanceMeter.update(deltaTime, Math.ceil(this.distanceRan))
+    }
+
+    // Night mode.
+    if (this.inverTimer > this.config.INVERT_FADE_DURATION) {
+      // 夜晚模式结束
+      this.inverTimer = 0
+      this.invertTrigger = false
+      this.invert(false)
+    } else if (this.inverTimer) {
+      // 处于夜晚模式，更新其时间
+      this.inverTimer += deltaTime
+    } else {
+      // 还没进入夜晚模式
+      // 游戏移动的距离
+      const actualDistance = this.distanceMeter.getActualDistance(Math.ceil(this.distanceRan))
+
+      if (actualDistance > 0) {
+        // 每移动指定距离就触发一次夜晚模式
+        this.invertTrigger = !(actualDistance % this.config.INVERT_DISTANCE)
+
+        if (this.invertTrigger && this.inverTimer === 0) {
+          this.inverTimer += deltaTime
+          this.invert(false)
+        }
+      }
     }
 
     if (this.playing) {
@@ -285,11 +314,26 @@ export default class Runner {
     this.containerEl.style.transform = "scale(" + scale + ") translateY(" + translateY + "px)"
   }
 
+  /**
+   * Inverts the current page / canvas colors.
+   */
+  invert(reset: boolean) {
+    const htmlEl = document.firstElementChild
+
+    if (reset) {
+      htmlEl?.classList.toggle(Runner.classes.INVERTED, false)
+      this.inverTimer = 0
+      this.inverted = false
+    } else {
+      this.inverted = htmlEl?.classList.toggle(Runner.classes.INVERTED, this.invertTrigger)!
+    }
+  }
+
   onVisibilityChange(e: Event) {
     console.log(e.type)
     if (document.hidden || e.type === Runner.events.BLUR || document.visibilityState != "visible") {
       this.stop()
-      
+
       this.gameOver()
     } else if (!this.crashed) {
       this.play()
@@ -442,27 +486,45 @@ export default class Runner {
     RESTART: { Enter: 1 } as any // Enter
   }
 
+  /**
+   * Default game configuration.
+   * Shared config for all  versions of the game. Additional parameters are
+   * defined in Runner.normalConfig and Runner.slowConfig.
+   */
   static config = {
-    SPEED: 6,
+    AUDIOCUE_PROXIMITY_THRESHOLD: 190,
+    AUDIOCUE_PROXIMITY_THRESHOLD_MOBILE_A11Y: 250,
     BG_CLOUD_SPEED: 0.2,
+    BOTTOM_PAD: 10,
+    // Scroll Y threshold at which the game can be activated.
+    CANVAS_IN_VIEW_OFFSET: -10,
+    CLEAR_TIME: 3000,
     CLOUD_FREQUENCY: 0.5,
-    GAP_COEFFICIENT: 0.6,
+    FADE_DURATION: 1,
+    FLASH_DURATION: 1000,
+    GAMEOVER_CLEAR_TIME: 1200,
+    INITIAL_JUMP_VELOCITY: 12,
+    INVERT_FADE_DURATION: 12000,
+    MAX_BLINK_COUNT: 3,
     MAX_CLOUDS: 6,
-    MAX_SPEED: 12,
     MAX_OBSTACLE_LENGTH: 3,
     MAX_OBSTACLE_DUPLICATION: 2,
-    CLEAR_TIME: 3000,
-    ACCELERATION: 0.001,
-    BOTTOM_PAD: 10,
-    GAMEOVER_CLEAR_TIME: 750,
-    GRAVITY: 0.6,
-    INITIAL_JUMP_VELOCITY: 12,
-    MIN_JUMP_HEIGHT: 35,
-    MOBILE_SPEED_COEFFICIENT: 1.2,
     RESOURCE_TEMPLATE_ID: "audio-resources",
+    SPEED: 6,
     SPEED_DROP_COEFFICIENT: 3,
     ARCADE_MODE_INITIAL_TOP_POSITION: 35,
     ARCADE_MODE_TOP_POSITION_PERCENT: 0.1
+  }
+
+  static normalConfig = {
+    ACCELERATION: 0.001,
+    AUDIOCUE_PROXIMITY_THRESHOLD: 190,
+    AUDIOCUE_PROXIMITY_THRESHOLD_MOBILE_A11Y: 250,
+    GAP_COEFFICIENT: 0.6,
+    INVERT_DISTANCE: 100,
+    MAX_SPEED: 13,
+    MOBILE_SPEED_COEFFICIENT: 1.2,
+    SPEED: 6
   }
 
   static imageSprite: HTMLImageElement
