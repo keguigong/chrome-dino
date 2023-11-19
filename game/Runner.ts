@@ -1,7 +1,8 @@
 import CollisionBox from "./CollisionBox"
+import DistanceMeter from "./DistanceMeter"
 import Horizon from "./Horizon"
 import Trex from "./Trex"
-import { IS_HIDPI, IS_MOBILE, RESOURCE_POSTFIX } from "./varibles"
+import { FPS, IS_HIDPI, IS_MOBILE, RESOURCE_POSTFIX } from "./varibles"
 
 const DEFAULT_WIDTH = 600
 export default class Runner {
@@ -10,46 +11,41 @@ export default class Runner {
   outerContainerEl!: HTMLElement
   containerEl!: HTMLElement
 
-  config!: ConfigDict
-  dimensions!: Dimensions
+  config: ConfigDict = Runner.config
+  dimensions = Runner.defaultDimensions
 
   canvas!: HTMLCanvasElement
   ctx!: CanvasRenderingContext2D
 
-  time!: number
-  runningTime!: number
-  currentSpeed!: number
+  time = Date.now()
+  runningTime = 0
+  currentSpeed = Runner.config.SPEED
 
-  activated!: boolean
-  playing!: boolean
-  crashed!: boolean
-  paused!: boolean
-  updatePending!: boolean
-  resizeTimerId_!: NodeJS.Timer | null
+  activated = false
+  playing = false
+  crashed = false
+  paused = false
+  inverted = false // Night mode on
+  inverTimer = 0 // Night mode start time
+  invertTrigger = false
+  updatePending = false
+  resizeTimerId_: NodeJS.Timer | null = null
 
-  raqId!: number
+  raqId = 0
 
   horizon!: Horizon
   playingIntro!: boolean
 
+  msPerFrame = 1000 / FPS
+  distanceMeter!: DistanceMeter
+  distanceRan = 0
+  highestScore = 0
+
+  tRex!: Trex
+
   constructor(outerContainerId: string, optConfig?: ConfigDict) {
-    this.outerContainerEl = document.querySelector(outerContainerId) as HTMLElement
-
-    this.config = optConfig || Runner.config
-    this.dimensions = Runner.defaultDimensions
-
-    this.time = Date.now()
-    this.runningTime = 0
-    this.currentSpeed = Runner.config.SPEED
-
-    this.activated = false
-    this.playing = false
-    this.crashed = false
-    this.paused = false
-    this.updatePending = false
-    this.resizeTimerId_ = null
-
-    this.raqId = 0
+    this.outerContainerEl = document.querySelector(outerContainerId)!
+    this.config = optConfig || Object.assign(Runner.config, Runner.normalConfig)
 
     this.loadImages()
   }
@@ -91,10 +87,13 @@ export default class Runner {
     this.ctx.fillStyle = "#f7f7f7"
     this.ctx.fill()
     Runner.updateCanvasScaling(this.canvas)
-    // Load background class Horizon
-    this.horizon = new Horizon(this.canvas, this.spriteDef, this.dimensions, Runner.config.GAP_COEFFICIENT)
-
     this.outerContainerEl.appendChild(this.containerEl)
+
+    // Load background class Horizon
+    this.horizon = new Horizon(this.canvas, this.spriteDef, this.dimensions, this.config.GAP_COEFFICIENT)
+
+    this.distanceMeter = new DistanceMeter(this.canvas, this.spriteDef.TEXT_SPRITE, this.dimensions.WIDTH)
+    this.tRex = new Trex(this.canvas, this.spriteDef.TREX)
 
     this.startListening()
     this.update()
@@ -159,26 +158,61 @@ export default class Runner {
     if (this.playing) {
       this.clearCanvas()
 
+      if (this.tRex.jumping) {
+        this.tRex.updateJump(deltaTime)
+      }
+
       this.runningTime += deltaTime
       let hasObstacles = this.runningTime > Runner.config.CLEAR_TIME
 
-      if (!this.playingIntro) {
+      if (!this.playingIntro && this.tRex.jumpCount === 1) {
         this.playIntro()
       }
 
+      // The horizon doesn't move until the intro is over.
       if (this.playingIntro) {
         this.horizon.update(0, this.currentSpeed, hasObstacles)
-      } else {
+      } else if (!this.crashed) {
         deltaTime = !this.activated ? 0 : deltaTime
-        this.horizon.update(deltaTime, this.currentSpeed, hasObstacles)
+        this.horizon.update(deltaTime, this.currentSpeed, hasObstacles, this.inverted)
       }
 
-      if (this.currentSpeed < Runner.config.MAX_SPEED) {
-        this.currentSpeed += Runner.config.ACCELERATION
+      if (this.currentSpeed < this.config.MAX_SPEED) {
+        this.currentSpeed += this.config.ACCELERATION
+      }
+
+      this.distanceRan += (this.currentSpeed * deltaTime) / this.msPerFrame
+      let playAchievementSound = this.distanceMeter.update(deltaTime, Math.ceil(this.distanceRan))
+    }
+
+    // Night mode.
+    if (this.inverTimer > this.config.INVERT_FADE_DURATION) {
+      // 夜晚模式结束
+      this.inverTimer = 0
+      this.invertTrigger = false
+      this.invert(false)
+    } else if (this.inverTimer) {
+      // 处于夜晚模式，更新其时间
+      this.inverTimer += deltaTime
+    } else {
+      // 还没进入夜晚模式
+      // 游戏移动的距离
+      const actualDistance = this.distanceMeter.getActualDistance(Math.ceil(this.distanceRan))
+
+      if (actualDistance > 0) {
+        // 每移动指定距离就触发一次夜晚模式
+        this.invertTrigger = !(actualDistance % this.config.INVERT_DISTANCE)
+
+        if (this.invertTrigger && this.inverTimer === 0) {
+          this.inverTimer += deltaTime
+          this.invert(false)
+        }
       }
     }
 
-    if (this.playing) {
+    if (this.playing || (!this.activated && this.tRex.blinkCount < Runner.config.MAX_BLINK_COUNT)) {
+      this.tRex.update(deltaTime)
+
       this.scheduleNextUpdate()
     }
   }
@@ -200,6 +234,7 @@ export default class Runner {
   playIntro() {
     if (!this.activated && !this.crashed) {
       this.playingIntro = true
+      this.tRex.playingIntro = true
 
       let keyframes = `@-webkit-keyframes intro {
           from { width: ${Trex.config.WIDTH}px }
@@ -224,12 +259,34 @@ export default class Runner {
     if (this.isArcadeMode()) {
       this.setArcadeMode()
     }
+
+    this.tRex.playingIntro = false
     this.runningTime = 0
     this.playingIntro = false
     this.containerEl.style.webkitAnimation = ""
 
     window.addEventListener(Runner.events.BLUR, this.onVisibilityChange.bind(this))
     window.addEventListener(Runner.events.FOCUS, this.onVisibilityChange.bind(this))
+  }
+
+  restart() {
+    if (!this.raqId) {
+      this.runningTime = 0
+      this.setPlayStatus(true)
+      this.paused = false
+      this.crashed = false
+    }
+  }
+
+  gameOver() {
+    this.stop()
+
+    if (this.distanceRan > this.highestScore) {
+      this.highestScore = Math.ceil(this.distanceRan)
+      this.distanceMeter.setHightScore(this.highestScore)
+    }
+
+    this.time = Date.now()
   }
 
   clearCanvas() {
@@ -269,12 +326,18 @@ export default class Runner {
     this.containerEl.style.transform = "scale(" + scale + ") translateY(" + translateY + "px)"
   }
 
-  restart() {
-    if (!this.raqId) {
-      this.runningTime = 0
-      this.setPlayStatus(true)
-      this.paused = false
-      this.crashed = false
+  /**
+   * Inverts the current page / canvas colors.
+   */
+  invert(reset: boolean) {
+    const htmlEl = document.firstElementChild
+
+    if (reset) {
+      htmlEl?.classList.toggle(Runner.classes.INVERTED, false)
+      this.inverTimer = 0
+      this.inverted = false
+    } else {
+      this.inverted = htmlEl?.classList.toggle(Runner.classes.INVERTED, this.invertTrigger)!
     }
   }
 
@@ -282,6 +345,8 @@ export default class Runner {
     console.log(e.type)
     if (document.hidden || e.type === Runner.events.BLUR || document.visibilityState != "visible") {
       this.stop()
+
+      this.gameOver()
     } else if (!this.crashed) {
       this.play()
     }
@@ -311,24 +376,50 @@ export default class Runner {
     const evtType = e.type
     switch (evtType) {
       case Runner.events.KEYDOWN:
-      case Runner.events.TOUCHSTART:
-      case Runner.events.KEYDOWN:
         this.onKeydown(e)
+        break
+      case Runner.events.KEYUP:
+        this.onKeyUp(e)
         break
     }
   }
 
   onKeydown(e: KeyboardEvent) {
     if (!this.crashed && !this.paused) {
-      if (Runner.keycodes.JUMP[e.code]) {
+      if (Runner.keycodes.JUMP[e.keyCode]) {
         e.preventDefault()
 
         if (!this.playing) {
           this.setPlayStatus(true)
           this.update()
         }
+
+        if (!this.tRex.jumping && !this.tRex.ducking) {
+          this.tRex.startJump(this.currentSpeed)
+        }
+      } else if (this.playing && Runner.keycodes.DUCK[e.keyCode]) {
+        e.preventDefault()
+
+        if (this.tRex.jumping) {
+          this.tRex.setSpeedDrop()
+        } else if (!this.tRex.jumping && !this.tRex.ducking) {
+          this.tRex.setDuck(true)
+        }
       }
     }
+  }
+
+  onKeyUp(e: KeyboardEvent) {
+    if (this.isRunning() && Runner.keycodes.JUMP[e.keyCode]) {
+      this.tRex.endJump()
+    } else if (Runner.keycodes.DUCK[e.keyCode]) {
+      this.tRex.speedDrop = false
+      this.tRex.setDuck(false)
+    }
+  }
+
+  isRunning() {
+    return !!this.raqId
   }
 
   stop() {
@@ -344,6 +435,7 @@ export default class Runner {
       this.paused = false
       this.time = Date.now()
       this.update()
+      this.tRex.reset()
     }
   }
 
@@ -428,32 +520,50 @@ export default class Runner {
   }
 
   static keycodes = {
-    JUMP: { ArrowUp: 1, Space: 1 } as any, // Up, spacebar
-    DUCK: { ArrowDown: 1 } as any, // Down
-    RESTART: { Enter: 1 } as any // Enter
+    JUMP: { 38: 1, 32: 1 } as any, // Up, spacebar
+    DUCK: { 40: 1 } as any, // Down
+    RESTART: { 13: 1 } as any // Enter
   }
 
+  /**
+   * Default game configuration.
+   * Shared config for all  versions of the game. Additional parameters are
+   * defined in Runner.normalConfig and Runner.slowConfig.
+   */
   static config = {
-    SPEED: 6,
+    AUDIOCUE_PROXIMITY_THRESHOLD: 190,
+    AUDIOCUE_PROXIMITY_THRESHOLD_MOBILE_A11Y: 250,
     BG_CLOUD_SPEED: 0.2,
+    BOTTOM_PAD: 10,
+    // Scroll Y threshold at which the game can be activated.
+    CANVAS_IN_VIEW_OFFSET: -10,
+    CLEAR_TIME: 3000,
     CLOUD_FREQUENCY: 0.5,
-    GAP_COEFFICIENT: 0.6,
+    FADE_DURATION: 1,
+    FLASH_DURATION: 1000,
+    GAMEOVER_CLEAR_TIME: 1200,
+    INITIAL_JUMP_VELOCITY: 12,
+    INVERT_FADE_DURATION: 12000,
+    MAX_BLINK_COUNT: 3,
     MAX_CLOUDS: 6,
-    MAX_SPEED: 12,
     MAX_OBSTACLE_LENGTH: 3,
     MAX_OBSTACLE_DUPLICATION: 2,
-    CLEAR_TIME: 3000,
-    ACCELERATION: 0.001,
-    BOTTOM_PAD: 10,
-    GAMEOVER_CLEAR_TIME: 750,
-    GRAVITY: 0.6,
-    INITIAL_JUMP_VELOCITY: 12,
-    MIN_JUMP_HEIGHT: 35,
-    MOBILE_SPEED_COEFFICIENT: 1.2,
     RESOURCE_TEMPLATE_ID: "audio-resources",
+    SPEED: 6,
     SPEED_DROP_COEFFICIENT: 3,
     ARCADE_MODE_INITIAL_TOP_POSITION: 35,
     ARCADE_MODE_TOP_POSITION_PERCENT: 0.1
+  }
+
+  static normalConfig = {
+    ACCELERATION: 0.001,
+    AUDIOCUE_PROXIMITY_THRESHOLD: 190,
+    AUDIOCUE_PROXIMITY_THRESHOLD_MOBILE_A11Y: 250,
+    GAP_COEFFICIENT: 0.6,
+    INVERT_DISTANCE: 700,
+    MAX_SPEED: 13,
+    MOBILE_SPEED_COEFFICIENT: 1.2,
+    SPEED: 6
   }
 
   static imageSprite: HTMLImageElement

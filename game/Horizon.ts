@@ -1,5 +1,6 @@
 import Cloud from "./Cloud"
 import HorizonLine from "./HorizonLine"
+import NightMode from "./NightMode"
 import Obstacle from "./Obstacle"
 import Runner from "./Runner"
 import { getRandomNum } from "./varibles"
@@ -12,13 +13,15 @@ export default class Horizon {
 
   horizonLine!: HorizonLine
   dimensions!: Dimensions
-  cloudFrequency!: number
-  clouds!: Cloud[]
-  cloudSpeed!: number
+  cloudFrequency = Cloud.config.CLOUD_FREQUENCY
+  cloudSpeed = Cloud.config.BG_CLOUD_SPEED
+  clouds: Cloud[] = []
 
   gapCoeffecient!: number
-  obstacles!: Obstacle[]
-  obstacleHistory!: string[]
+  obstacles: Obstacle[] = []
+  obstacleHistory: string[] = []
+
+  nightMode!: NightMode
 
   constructor(canvas: HTMLCanvasElement, spritePos: SpritePosDef, dimensions: Dimensions, gapCoeffient: number) {
     this.canvas = canvas
@@ -27,23 +30,18 @@ export default class Horizon {
     this.dimensions = dimensions
     this.gapCoeffecient = gapCoeffient
 
-    this.obstacles = []
-    this.obstacleHistory = []
-
-    this.cloudFrequency = Cloud.config.CLOUD_FREQUENCY
-    this.cloudSpeed = Cloud.config.BG_CLOUD_SPEED
-    this.clouds = []
-
     this.init()
   }
 
   private init() {
     this.addCloud()
     this.horizonLine = new HorizonLine(this.canvas, this.spritePos.HORIZON)
+    this.nightMode = new NightMode(this.canvas, this.spritePos.MOON, this.dimensions.WIDTH)
   }
 
-  update(deltaTime: number, speed: number, hasObstacles?: boolean) {
+  update(deltaTime: number, speed: number, hasObstacles?: boolean, showNightMode: boolean = false) {
     this.horizonLine.update(deltaTime, speed)
+    this.nightMode.update(showNightMode)
     this.updateCloud(deltaTime, speed)
     if (hasObstacles) {
       this.updateObstacles(deltaTime, speed)
