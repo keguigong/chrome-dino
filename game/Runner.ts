@@ -1,7 +1,8 @@
 import CollisionBox from "./CollisionBox"
+import DistanceMeter from "./DistanceMeter"
 import Horizon from "./Horizon"
 import Trex from "./Trex"
-import { IS_HIDPI, IS_MOBILE, RESOURCE_POSTFIX } from "./varibles"
+import { FPS, IS_HIDPI, IS_MOBILE, RESOURCE_POSTFIX } from "./varibles"
 
 const DEFAULT_WIDTH = 600
 export default class Runner {
@@ -10,46 +11,36 @@ export default class Runner {
   outerContainerEl!: HTMLElement
   containerEl!: HTMLElement
 
-  config!: ConfigDict
-  dimensions!: Dimensions
+  config: ConfigDict = Runner.config
+  dimensions = Runner.defaultDimensions
 
   canvas!: HTMLCanvasElement
   ctx!: CanvasRenderingContext2D
 
-  time!: number
-  runningTime!: number
-  currentSpeed!: number
+  time = Date.now()
+  runningTime = 0
+  currentSpeed = Runner.config.SPEED
 
-  activated!: boolean
-  playing!: boolean
-  crashed!: boolean
-  paused!: boolean
-  updatePending!: boolean
-  resizeTimerId_!: NodeJS.Timer | null
+  activated = false
+  playing = false
+  crashed = false
+  paused = false
+  updatePending = false
+  resizeTimerId_: NodeJS.Timer | null = null
 
-  raqId!: number
+  raqId = 0
 
   horizon!: Horizon
   playingIntro!: boolean
 
+  msPerFrame = 1000 / FPS
+  distanceMeter!: DistanceMeter
+  distanceRan = 0
+  highestScore = 0
+
   constructor(outerContainerId: string, optConfig?: ConfigDict) {
-    this.outerContainerEl = document.querySelector(outerContainerId) as HTMLElement
-
+    this.outerContainerEl = document.querySelector(outerContainerId)!
     this.config = optConfig || Runner.config
-    this.dimensions = Runner.defaultDimensions
-
-    this.time = Date.now()
-    this.runningTime = 0
-    this.currentSpeed = Runner.config.SPEED
-
-    this.activated = false
-    this.playing = false
-    this.crashed = false
-    this.paused = false
-    this.updatePending = false
-    this.resizeTimerId_ = null
-
-    this.raqId = 0
 
     this.loadImages()
   }
@@ -91,10 +82,12 @@ export default class Runner {
     this.ctx.fillStyle = "#f7f7f7"
     this.ctx.fill()
     Runner.updateCanvasScaling(this.canvas)
+    this.outerContainerEl.appendChild(this.containerEl)
+
     // Load background class Horizon
     this.horizon = new Horizon(this.canvas, this.spriteDef, this.dimensions, Runner.config.GAP_COEFFICIENT)
 
-    this.outerContainerEl.appendChild(this.containerEl)
+    this.distanceMeter = new DistanceMeter(this.canvas, this.spriteDef.TEXT_SPRITE, this.dimensions.WIDTH)
 
     this.startListening()
     this.update()
@@ -176,6 +169,9 @@ export default class Runner {
       if (this.currentSpeed < Runner.config.MAX_SPEED) {
         this.currentSpeed += Runner.config.ACCELERATION
       }
+
+      this.distanceRan += (this.currentSpeed * deltaTime) / this.msPerFrame
+      let playAchievementSound = this.distanceMeter?.update(deltaTime, Math.ceil(this.distanceRan))
     }
 
     if (this.playing) {
@@ -232,6 +228,26 @@ export default class Runner {
     window.addEventListener(Runner.events.FOCUS, this.onVisibilityChange.bind(this))
   }
 
+  restart() {
+    if (!this.raqId) {
+      this.runningTime = 0
+      this.setPlayStatus(true)
+      this.paused = false
+      this.crashed = false
+    }
+  }
+
+  gameOver() {
+    this.stop()
+
+    if (this.distanceRan > this.highestScore) {
+      this.highestScore = Math.ceil(this.distanceRan)
+      this.distanceMeter.setHightScore(this.highestScore)
+    }
+
+    this.time = Date.now()
+  }
+
   clearCanvas() {
     this.ctx.clearRect(0, 0, this.dimensions.WIDTH, this.dimensions.HEIGHT)
   }
@@ -269,19 +285,12 @@ export default class Runner {
     this.containerEl.style.transform = "scale(" + scale + ") translateY(" + translateY + "px)"
   }
 
-  restart() {
-    if (!this.raqId) {
-      this.runningTime = 0
-      this.setPlayStatus(true)
-      this.paused = false
-      this.crashed = false
-    }
-  }
-
   onVisibilityChange(e: Event) {
     console.log(e.type)
     if (document.hidden || e.type === Runner.events.BLUR || document.visibilityState != "visible") {
       this.stop()
+      
+      this.gameOver()
     } else if (!this.crashed) {
       this.play()
     }

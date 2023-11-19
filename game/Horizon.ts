@@ -12,13 +12,13 @@ export default class Horizon {
 
   horizonLine!: HorizonLine
   dimensions!: Dimensions
-  cloudFrequency!: number
-  clouds!: Cloud[]
-  cloudSpeed!: number
+  cloudFrequency = Cloud.config.CLOUD_FREQUENCY
+  cloudSpeed = Cloud.config.BG_CLOUD_SPEED
+  clouds: Cloud[] = []
 
   gapCoeffecient!: number
-  obstacles!: Obstacle[]
-  obstacleHistory!: string[]
+  obstacles: Obstacle[] = []
+  obstacleHistory: string[] = []
 
   constructor(canvas: HTMLCanvasElement, spritePos: SpritePosDef, dimensions: Dimensions, gapCoeffient: number) {
     this.canvas = canvas
@@ -26,13 +26,6 @@ export default class Horizon {
     this.spritePos = spritePos
     this.dimensions = dimensions
     this.gapCoeffecient = gapCoeffient
-
-    this.obstacles = []
-    this.obstacleHistory = []
-
-    this.cloudFrequency = Cloud.config.CLOUD_FREQUENCY
-    this.cloudSpeed = Cloud.config.BG_CLOUD_SPEED
-    this.clouds = []
 
     this.init()
   }

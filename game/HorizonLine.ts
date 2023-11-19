@@ -5,25 +5,19 @@ export default class HorizonLine {
   canvas!: HTMLCanvasElement
   ctx!: CanvasRenderingContext2D
 
-  sourceDimensions!: Dimensions
-  dimensions!: Dimensions
+  sourceDimensions: Dimensions = { ...HorizonLine.dimensions }
+  dimensions: Dimensions = HorizonLine.dimensions
+
   spritePos!: Position
-  sourceXPos!: number[]
-  xPos!: number[]
-  yPos!: number
-  bumpThreshold!: number
+  sourceXPos = [0, HorizonLine.dimensions.WIDTH]
+  xPos: number[] = []
+  yPos = 0
+  bumpThreshold = 0.5
 
   constructor(canvas: HTMLCanvasElement, spritePos: Position) {
     this.canvas = canvas
     this.ctx = canvas.getContext("2d") as CanvasRenderingContext2D
-    this.sourceDimensions = { ...HorizonLine.dimensions }
-    this.dimensions = HorizonLine.dimensions
-
     this.spritePos = spritePos
-    this.sourceXPos = [0, HorizonLine.dimensions.WIDTH]
-    this.xPos = []
-    this.yPos = 0
-    this.bumpThreshold = 0.5
 
     this.setSourceDimensions()
     this.draw()

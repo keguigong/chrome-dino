@@ -7,20 +7,19 @@ export default class Cloud {
   spritePos!: Position
   containerWidth!: number
 
-  xPos!: number
-  yPos!: number
-  remove!: boolean
-  cloudGap!: number
+  xPos = Runner.defaultDimensions.WIDTH
+  yPos = 0
+  remove = false
+  cloudGap = getRandomNum(Cloud.config.MIN_CLOUD_GAP, Cloud.config.MAX_CLOUD_GAP)
 
   constructor(canvas: HTMLCanvasElement, spritePos: Position, containerWidth: number) {
     this.canvas = canvas
     this.ctx = canvas.getContext("2d") as CanvasRenderingContext2D
     this.spritePos = spritePos
     this.containerWidth = containerWidth
+
     this.xPos = containerWidth
     this.yPos = 0
-    this.remove = false
-    this.cloudGap = getRandomNum(Cloud.config.MIN_CLOUD_GAP, Cloud.config.MAX_CLOUD_GAP)
 
     this.init()
   }
