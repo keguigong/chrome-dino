@@ -2,7 +2,6 @@
   font-size: 1em;
   line-height: 1.55;
   margin: 0 auto;
-  margin-bottom: 90px;
   max-width: 600px;
   padding-top: 100px;
   position: relative;
@@ -29,6 +28,12 @@
 
 #offline-resources {
   display: none;
+}
+
+.arcade-mode .interstitial-wrapper {
+  height: 100vh;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .arcade-mode,

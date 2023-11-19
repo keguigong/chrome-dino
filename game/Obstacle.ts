@@ -5,19 +5,19 @@ export default class Obstacle {
   canvas!: HTMLCanvasElement
   ctx!: CanvasRenderingContext2D
 
-  typeConfig!: ConfigDict
   spritePos!: Position
+  typeConfig!: ConfigDict
   gapCoefficient!: number
-  dimensions!: Dimensions
   // 每组障碍物的数量（随机 1~3 个）
   size!: number
+  dimensions!: Dimensions
+  remove!: boolean
   xPos!: number
   yPos!: number
   width!: number
-
-  remove!: boolean
   gap!: number
   speedOffset!: number
+
   currentFrame!: number
   timer!: number
 
@@ -37,15 +37,13 @@ export default class Obstacle {
     this.spritePos = spritePos
     this.typeConfig = type
     this.gapCoefficient = gapCoefficient
-    this.dimensions = dimensions
-
     // #obstacles in each obstacle group
     this.size = getRandomNum(1, Obstacle.MAX_OBSTACLE_LENGTH)
-
+    this.dimensions = dimensions
+    this.remove = false
     this.xPos = dimensions.WIDTH + (optXOffset || 0)
     this.yPos = 0
 
-    this.remove = false
     this.gap = 0
     this.speedOffset = 0
 
