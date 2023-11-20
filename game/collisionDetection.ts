@@ -26,11 +26,11 @@ export function checkForCollision(obstacle: Obstacle, tRex: Trex, optCanvasCtx?:
   )
 
   if (optCanvasCtx) {
-    drawCollisionBoxes(optCanvasCtx, tRexBox, obstacleBox)
+    // drawCollisionBoxes(optCanvasCtx, tRexBox, obstacleBox)
   }
 
   // Simple outer bounds check.
-  if (boxCompare(tRexBox, obstacleBox)) {
+  if (true) {
     const collisionBoxes = obstacle.collisionBoxes
     let tRexCollisionBoxes = tRex.ducking ? Trex.collisionBoxes.DUCKING : Trex.collisionBoxes.RUNNING
 

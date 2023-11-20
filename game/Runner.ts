@@ -4,7 +4,7 @@ import GameOverPanel from "./GameOverPanel"
 import Horizon from "./Horizon"
 import Trex from "./Trex"
 import { checkForCollision } from "./collisionDetection"
-import { FPS, IS_HIDPI, IS_MOBILE, RESOURCE_POSTFIX } from "./varibles"
+import { FPS, IS_HIDPI, IS_IOS, IS_MOBILE, RESOURCE_POSTFIX } from "./varibles"
 
 const DEFAULT_WIDTH = 600
 export default class Runner {
@@ -46,6 +46,9 @@ export default class Runner {
   tRex!: Trex
   gameOverPanel!: GameOverPanel
 
+  audioContext!: AudioContext
+  soundFx: ConfigDict = {}
+
   constructor(outerContainerId: string, optConfig?: ConfigDict) {
     this.outerContainerEl = document.querySelector(outerContainerId)!
     this.config = optConfig || Object.assign(Runner.config, Runner.normalConfig)
@@ -53,6 +56,10 @@ export default class Runner {
     this.loadImages()
   }
 
+  /**
+   * Cache the appropriate image sprite from the page and get the sprite sheet
+   * definition.
+   */
   loadImages() {
     let scale = "1x"
     this.spriteDef = Runner.spriteDefinition.LDPI
@@ -66,6 +73,26 @@ export default class Runner {
       this.init()
     } else {
       Runner.imageSprite.addEventListener(Runner.events.LOAD, this.init.bind(this))
+    }
+  }
+
+  /**
+   * Load and decode base 64 encoded sounds.
+   */
+  loadSound() {
+    if (!IS_IOS) {
+      this.audioContext = new AudioContext()
+
+      for (const sound in Runner.sounds) {
+        let soundSrc = (document.getElementById(Runner.sounds[sound]) as HTMLAudioElement).src
+        soundSrc = soundSrc.substr(soundSrc.indexOf(",") + 1)
+        const buffer = decodeBase64ToArrayBuffer(soundSrc)
+
+        // Async, so no guarantee of order in array.
+        this.audioContext.decodeAudioData(buffer, (audioData: AudioBuffer) => {
+          this.soundFx[sound] = audioData
+        })
+      }
     }
   }
 
@@ -199,29 +226,33 @@ export default class Runner {
       }
 
       let playAchievementSound = this.distanceMeter.update(deltaTime, Math.ceil(this.distanceRan))
-    }
 
-    // Night mode.
-    if (this.inverTimer > this.config.INVERT_FADE_DURATION) {
-      // 夜晚模式结束
-      this.inverTimer = 0
-      this.invertTrigger = false
-      this.invert(false)
-    } else if (this.inverTimer) {
-      // 处于夜晚模式，更新其时间
-      this.inverTimer += deltaTime
-    } else {
-      // 还没进入夜晚模式
-      // 游戏移动的距离
-      const actualDistance = this.distanceMeter.getActualDistance(Math.ceil(this.distanceRan))
+      if (playAchievementSound) {
+        this.playSound(this.soundFx.SCORE)
+      }
 
-      if (actualDistance > 0) {
-        // 每移动指定距离就触发一次夜晚模式
-        this.invertTrigger = !(actualDistance % this.config.INVERT_DISTANCE)
+      // Night mode.
+      if (this.inverTimer > this.config.INVERT_FADE_DURATION) {
+        // 夜晚模式结束
+        this.inverTimer = 0
+        this.invertTrigger = false
+        this.invert(false)
+      } else if (this.inverTimer) {
+        // 处于夜晚模式，更新其时间
+        this.inverTimer += deltaTime
+      } else {
+        // 还没进入夜晚模式
+        // 游戏移动的距离
+        const actualDistance = this.distanceMeter.getActualDistance(Math.ceil(this.distanceRan))
 
-        if (this.invertTrigger && this.inverTimer === 0) {
-          this.inverTimer += deltaTime
-          this.invert(false)
+        if (actualDistance > 0) {
+          // 每移动指定距离就触发一次夜晚模式
+          this.invertTrigger = !(actualDistance % this.config.INVERT_DISTANCE)
+
+          if (this.invertTrigger && this.inverTimer === 0) {
+            this.inverTimer += deltaTime
+            this.invert(false)
+          }
         }
       }
     }
@@ -307,6 +338,7 @@ export default class Runner {
   }
 
   gameOver() {
+    this.playSound(this.soundFx.HIT)
     this.stop()
     this.crashed = true
     this.distanceMeter.achievement = false
@@ -385,6 +417,18 @@ export default class Runner {
     }
   }
 
+  /**
+   * Play a sound.
+   */
+  playSound(soundBuffer?: AudioBuffer) {
+    if (soundBuffer) {
+      let sourceNode = this.audioContext.createBufferSource()
+      sourceNode.buffer = soundBuffer
+      sourceNode.connect(this.audioContext.destination)
+      sourceNode.start(0)
+    }
+  }
+
   onVisibilityChange(e: Event) {
     console.log(e.type)
     if (document.hidden || e.type === Runner.events.BLUR || document.visibilityState != "visible") {
@@ -407,8 +451,6 @@ export default class Runner {
   }
 
   stopListening() {
-    console.log("stop")
-
     document.removeEventListener(Runner.events.KEYDOWN, this)
     document.removeEventListener(Runner.events.KEYUP, this)
   }
@@ -433,11 +475,13 @@ export default class Runner {
         e.preventDefault()
 
         if (!this.playing) {
+          this.loadSound()
           this.setPlayStatus(true)
           this.update()
         }
 
         if (!this.tRex.jumping && !this.tRex.ducking) {
+          this.playSound(this.soundFx.BUTTON_PRESS)
           this.tRex.startJump(this.currentSpeed)
         }
       } else if (this.playing && Runner.keycodes.DUCK[keycode]) {
@@ -570,6 +614,15 @@ export default class Runner {
     SNACKBAR: "snackbar",
     SNACKBAR_SHOW: "snackbar-show",
     TOUCH_CONTROLLER: "controller"
+  }
+
+  /**
+   * Sound FX. Reference to the ID of the audio tag on interstitial page.
+   */
+  static sounds: ConfigDict = {
+    BUTTON_PRESS: "offline-sound-press",
+    HIT: "offline-sound-hit",
+    SCORE: "offline-sound-reached"
   }
 
   static keycodes = {
@@ -746,4 +799,20 @@ export default class Runner {
     },
     LINES: [{ SOURCE_X: 2, SOURCE_Y: 52, WIDTH: 600, HEIGHT: 12, YPOS: 127 }]
   }
+}
+
+/**
+ * Decodes the base 64 audio to ArrayBuffer used by Web Audio.
+ * @param {string} base64String
+ */
+function decodeBase64ToArrayBuffer(base64String: string) {
+  const len = (base64String.length / 4) * 3
+  const str = atob(base64String)
+  const arrayBuffer = new ArrayBuffer(len)
+  const bytes = new Uint8Array(arrayBuffer)
+
+  for (let i = 0; i < len; i++) {
+    bytes[i] = str.charCodeAt(i)
+  }
+  return bytes.buffer
 }
