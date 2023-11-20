@@ -3,6 +3,38 @@ html {
   will-change: filter, background-color;
 }
 
+body {
+  font-family: system-ui, sans-serif;
+  --google-blue-100: rgb(210, 227, 252);
+  --google-blue-300: rgb(138, 180, 248);
+  --google-blue-600: rgb(26, 115, 232);
+  --google-blue-700: rgb(25, 103, 210);
+  --google-gray-100: rgb(241, 243, 244);
+  --google-gray-300: rgb(218, 220, 224);
+  --google-gray-500: rgb(154, 160, 166);
+  --google-gray-50: rgb(248, 249, 250);
+  --google-gray-600: rgb(128, 134, 139);
+  --google-gray-700: rgb(95, 99, 104);
+  --google-gray-800: rgb(60, 64, 67);
+  --google-gray-900: rgb(32, 33, 36);
+  --heading-color: var(--google-gray-900);
+  --text-color: var(--google-gray-700);
+}
+
+h1 {
+  color: var(--heading-color);
+  font-size: 1.6em;
+  font-weight: normal;
+  line-height: 1.25em;
+  margin-bottom: 16px;
+}
+
+#main-message {
+  position: relative;
+  top: 72px;
+  transition: opacity 0.15s ease-in-out;
+}
+
 .inverted {
   filter: invert(100%);
   background-color: #fff;

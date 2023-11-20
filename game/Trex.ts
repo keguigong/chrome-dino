@@ -1,3 +1,4 @@
+import CollisionBox from "./CollisionBox"
 import Runner from "./Runner"
 import { FPS, IS_HIDPI } from "./varibles"
 
@@ -230,14 +231,6 @@ export default class Trex {
     this.jumpCount = 0
   }
 
-  static status = {
-    CRASHED: "CRASHED",
-    DUCKING: "DUCKING",
-    JUMPING: "JUMPING",
-    RUNNING: "RUNNING",
-    WAITING: "WAITING"
-  }
-
   static config = {
     DROP_VELOCITY: -5,
     FLASH_OFF: 175,
@@ -259,7 +252,27 @@ export default class Trex {
     INITIAL_JUMP_VELOCITY: -10
   }
 
+  static collisionBoxes = {
+    DUCKING: [new CollisionBox(1, 18, 55, 25)],
+    RUNNING: [
+      new CollisionBox(22, 0, 17, 16),
+      new CollisionBox(1, 18, 30, 9),
+      new CollisionBox(10, 35, 14, 8),
+      new CollisionBox(1, 24, 29, 5),
+      new CollisionBox(5, 30, 21, 4),
+      new CollisionBox(9, 34, 15, 4)
+    ]
+  }
+
   static BLINK_TIMING = 7000
+
+  static status = {
+    CRASHED: "CRASHED",
+    DUCKING: "DUCKING",
+    JUMPING: "JUMPING",
+    RUNNING: "RUNNING",
+    WAITING: "WAITING"
+  }
 
   static animFrames: ConfigDict = {
     WAITING: {

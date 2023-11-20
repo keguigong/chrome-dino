@@ -85,6 +85,11 @@ export default class HorizonLine {
     return Math.random() > this.bumpThreshold ? this.dimensions.WIDTH : 0
   }
 
+  reset() {
+    this.xPos[0] = 0
+    this.xPos[1] = HorizonLine.dimensions.WIDTH
+  }
+
   static dimensions = {
     WIDTH: 600,
     HEIGHT: 12,

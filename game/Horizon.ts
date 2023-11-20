@@ -139,4 +139,10 @@ export default class Horizon {
       this.addNewObstacle(currentSpeed)
     }
   }
+
+  reset() {
+    this.obstacles = []
+    this.horizonLine.reset()
+    this.nightMode.reset()
+  }
 }
