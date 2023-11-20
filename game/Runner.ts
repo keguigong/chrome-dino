@@ -2,6 +2,7 @@ import CollisionBox from "./CollisionBox"
 import DistanceMeter from "./DistanceMeter"
 import Horizon from "./Horizon"
 import Trex from "./Trex"
+import { checkForCollision } from "./collisionDetection"
 import { FPS, IS_HIDPI, IS_MOBILE, RESOURCE_POSTFIX } from "./varibles"
 
 const DEFAULT_WIDTH = 600
@@ -176,6 +177,9 @@ export default class Runner {
         deltaTime = !this.activated ? 0 : deltaTime
         this.horizon.update(deltaTime, this.currentSpeed, hasObstacles, this.inverted)
       }
+
+      // Check for collisions.
+      let collision = hasObstacles && checkForCollision(this.horizon.obstacles[0], this.tRex, this.ctx)
 
       if (this.currentSpeed < this.config.MAX_SPEED) {
         this.currentSpeed += this.config.ACCELERATION
