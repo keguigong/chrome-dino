@@ -191,6 +191,11 @@ export default class DistanceMeter {
     this.highScore = "AB " + highScoreStr
   }
 
+  reset() {
+    this.update(0, 0)
+    this.achievement = false
+  }
+
   static config = {
     MAX_DISTANCE_UNITS: 5, // 分数的最大位数
     ACHIEVEMENT_DISTANCE: 100, // 每 100 米触发一次闪动特效

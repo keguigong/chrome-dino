@@ -23,6 +23,11 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <div id="main-frame-error" className="interstitial-wrapper">
+        <div id="main-message">
+          <h1>
+            <span>Press space to play</span>
+          </h1>
+        </div>
         <div className="runner-container">
           <canvas className="runner-canvas"></canvas>
         </div>

@@ -1,5 +1,6 @@
 import CollisionBox from "./CollisionBox"
 import DistanceMeter from "./DistanceMeter"
+import GameOverPanel from "./GameOverPanel"
 import Horizon from "./Horizon"
 import Trex from "./Trex"
 import { checkForCollision } from "./collisionDetection"
@@ -43,6 +44,7 @@ export default class Runner {
   highestScore = 0
 
   tRex!: Trex
+  gameOverPanel!: GameOverPanel
 
   constructor(outerContainerId: string, optConfig?: ConfigDict) {
     this.outerContainerEl = document.querySelector(outerContainerId)!
@@ -133,20 +135,25 @@ export default class Runner {
 
       Runner.updateCanvasScaling(this.canvas)
 
+      this.distanceMeter.calcXPos(this.dimensions.WIDTH)
       this.clearCanvas()
       this.horizon.update(0, 0, true)
+      this.tRex.update(0)
 
       // Outer container and distance meter.
       if (this.playing || this.crashed || this.paused) {
         this.containerEl.style.width = this.dimensions.WIDTH + "px"
         this.containerEl.style.height = this.dimensions.HEIGHT + "px"
-        // this.stop()
+        this.stop()
+      } else {
+        this.tRex.draw(0, 0)
       }
 
       // Game over panel.
-      // if (this.crashed) {
-
-      // }
+      if (this.crashed && this.gameOverPanel) {
+        this.gameOverPanel.updateDimensions(this.dimensions.WIDTH)
+        this.gameOverPanel.draw()
+      }
     }
   }
 
@@ -181,11 +188,16 @@ export default class Runner {
       // Check for collisions.
       let collision = hasObstacles && checkForCollision(this.horizon.obstacles[0], this.tRex, this.ctx)
 
-      if (this.currentSpeed < this.config.MAX_SPEED) {
-        this.currentSpeed += this.config.ACCELERATION
+      if (!collision) {
+        this.distanceRan += (this.currentSpeed * deltaTime) / this.msPerFrame
+
+        if (this.currentSpeed < this.config.MAX_SPEED) {
+          this.currentSpeed += this.config.ACCELERATION
+        }
+      } else {
+        this.gameOver()
       }
 
-      this.distanceRan += (this.currentSpeed * deltaTime) / this.msPerFrame
       let playAchievementSound = this.distanceMeter.update(deltaTime, Math.ceil(this.distanceRan))
     }
 
@@ -240,6 +252,9 @@ export default class Runner {
       this.playingIntro = true
       this.tRex.playingIntro = true
 
+      const messageEl = document.querySelector("#main-message") as HTMLDivElement
+      messageEl.style.opacity = "0"
+
       let keyframes = `@-webkit-keyframes intro {
           from { width: ${Trex.config.WIDTH}px }
           to { width: ${this.dimensions.WIDTH}px } +
@@ -279,12 +294,37 @@ export default class Runner {
       this.setPlayStatus(true)
       this.paused = false
       this.crashed = false
+      this.distanceRan = 0
+      this.currentSpeed = this.config.SPEED
+      this.time = Date.now()
+      this.clearCanvas()
+      this.distanceMeter.reset()
+      this.horizon.reset()
+      this.tRex.reset()
+      this.invert(true)
+      this.update()
     }
   }
 
   gameOver() {
     this.stop()
+    this.crashed = true
+    this.distanceMeter.achievement = false
 
+    this.tRex.update(100, Trex.status.CRASHED)
+
+    if (!this.gameOverPanel) {
+      this.gameOverPanel = new GameOverPanel(
+        this.canvas,
+        this.spriteDef.TEXT_SPRITE,
+        this.spriteDef.RESTART,
+        this.dimensions
+      )
+    } else {
+      this.gameOverPanel.draw()
+    }
+
+    // Update the high score.
     if (this.distanceRan > this.highestScore) {
       this.highestScore = Math.ceil(this.distanceRan)
       this.distanceMeter.setHightScore(this.highestScore)
@@ -349,8 +389,6 @@ export default class Runner {
     console.log(e.type)
     if (document.hidden || e.type === Runner.events.BLUR || document.visibilityState != "visible") {
       this.stop()
-
-      this.gameOver()
     } else if (!this.crashed) {
       this.play()
     }
@@ -389,8 +427,9 @@ export default class Runner {
   }
 
   onKeydown(e: KeyboardEvent) {
+    const keycode = e.keyCode
     if (!this.crashed && !this.paused) {
-      if (Runner.keycodes.JUMP[e.keyCode]) {
+      if (Runner.keycodes.JUMP[keycode]) {
         e.preventDefault()
 
         if (!this.playing) {
@@ -401,7 +440,7 @@ export default class Runner {
         if (!this.tRex.jumping && !this.tRex.ducking) {
           this.tRex.startJump(this.currentSpeed)
         }
-      } else if (this.playing && Runner.keycodes.DUCK[e.keyCode]) {
+      } else if (this.playing && Runner.keycodes.DUCK[keycode]) {
         e.preventDefault()
 
         if (this.tRex.jumping) {
@@ -414,11 +453,21 @@ export default class Runner {
   }
 
   onKeyUp(e: KeyboardEvent) {
-    if (this.isRunning() && Runner.keycodes.JUMP[e.keyCode]) {
+    const keycode = e.keyCode
+    if (this.isRunning() && Runner.keycodes.JUMP[keycode]) {
       this.tRex.endJump()
-    } else if (Runner.keycodes.DUCK[e.keyCode]) {
+    } else if (Runner.keycodes.DUCK[keycode]) {
       this.tRex.speedDrop = false
       this.tRex.setDuck(false)
+    } else if (this.crashed) {
+      let deltaTime = Date.now() - this.time
+
+      if (
+        Runner.keycodes.RESTART[keycode] ||
+        (deltaTime >= this.config.GAMEOVER_CLEAR_TIME && Runner.keycodes.JUMP[keycode])
+      ) {
+        this.restart()
+      }
     }
   }
 

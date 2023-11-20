@@ -13,7 +13,10 @@ import Trex from "./Trex"
 export function checkForCollision(obstacle: Obstacle, tRex: Trex, optCanvasCtx?: CanvasRenderingContext2D) {
   // Adjustments are made to the bounding box as there is a 1 pixel white
   // border around the t-rex and obstacles.
-  const tRexBox = new CollisionBox(tRex.xPos + 1, tRex.yPos + 1, tRex.config.WIDTH - 2, tRex.config.HEIGHT - 1)
+  const tRexWidth = tRex.ducking ? tRex.config.WIDTH_DUCK : tRex.config.WIDTH
+  const tRexHeight = tRex.ducking ? tRex.config.HEIGHT_DUCK : tRex.config.HEIGHT
+  // const tRexYPos = tRex.ducking ? tRex.yPos
+  const tRexBox = new CollisionBox(tRex.xPos + 1, tRex.yPos + 1, tRexWidth - 2, tRexHeight - 1)
 
   const obstacleBox = new CollisionBox(
     obstacle.xPos + 1,
