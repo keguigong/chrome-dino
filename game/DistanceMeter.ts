@@ -45,6 +45,7 @@ export default class DistanceMeter {
       maxDistanceStr += "9"
     }
 
+    this.readHighScore()
     this.maxScore = parseInt(maxDistanceStr)
   }
 
@@ -184,11 +185,24 @@ export default class DistanceMeter {
    * Set the highscore as a array string.
    * Position of char in the sprite: H - 10, I - 11.
    */
-  setHightScore(distance: number) {
+  setHighScore(distance: number) {
     distance = this.getActualDistance(distance)
     let highScoreStr = (this.defaultString + distance).substr(-this.maxScoreUnits)
 
+    this.saveHighScore(highScoreStr)
     this.highScore = "AB " + highScoreStr
+  }
+
+  readHighScore() {
+    const localValue = localStorage.getItem("chrome-dino-high-score")
+    if (localValue) {
+      let highScoreStr = (this.defaultString + parseInt(localValue)).substr(-this.maxScoreUnits)
+      this.highScore = "AB " + highScoreStr
+    }
+  }
+
+  saveHighScore(score: string) {
+    localStorage.setItem("chrome-dino-high-score", score)
   }
 
   reset() {

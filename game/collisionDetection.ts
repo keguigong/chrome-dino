@@ -26,7 +26,7 @@ export function checkForCollision(obstacle: Obstacle, tRex: Trex, optCanvasCtx?:
   )
 
   if (optCanvasCtx) {
-    // drawCollisionBoxes(optCanvasCtx, tRexBox, obstacleBox)
+    drawCollisionBoxes(optCanvasCtx, tRexBox, obstacleBox)
   }
 
   // Simple outer bounds check.

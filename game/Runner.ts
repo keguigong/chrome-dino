@@ -213,7 +213,7 @@ export default class Runner {
       }
 
       // Check for collisions.
-      let collision = hasObstacles && checkForCollision(this.horizon.obstacles[0], this.tRex, this.ctx)
+      let collision = hasObstacles && checkForCollision(this.horizon.obstacles[0], this.tRex)
 
       if (!collision) {
         this.distanceRan += (this.currentSpeed * deltaTime) / this.msPerFrame
@@ -359,7 +359,7 @@ export default class Runner {
     // Update the high score.
     if (this.distanceRan > this.highestScore) {
       this.highestScore = Math.ceil(this.distanceRan)
-      this.distanceMeter.setHightScore(this.highestScore)
+      this.distanceMeter.setHighScore(this.highestScore)
     }
 
     this.time = Date.now()
@@ -445,7 +445,8 @@ export default class Runner {
     document.addEventListener(Runner.events.KEYUP, this)
 
     // Touch / pointer.
-    this.containerEl.addEventListener(Runner.events.TOUCHSTART, this)
+    document.addEventListener(Runner.events.TOUCHSTART, this)
+    document.addEventListener(Runner.events.TOUCHEND, this)
     document.addEventListener(Runner.events.POINTERDOWN, this)
     document.addEventListener(Runner.events.POINTERUP, this)
   }
@@ -460,20 +461,28 @@ export default class Runner {
     const evtType = e.type
     switch (evtType) {
       case Runner.events.KEYDOWN:
+      case Runner.events.TOUCHSTART:
+      case Runner.events.POINTERDOWN:
         this.onKeydown(e)
         break
       case Runner.events.KEYUP:
+      case Runner.events.TOUCHEND:
+      case Runner.events.POINTERUP:
         this.onKeyUp(e)
         break
     }
   }
 
   onKeydown(e: KeyboardEvent) {
-    const keycode = e.keyCode
-    if (!this.crashed && !this.paused) {
-      if (Runner.keycodes.JUMP[keycode]) {
-        e.preventDefault()
+    if (IS_MOBILE && this.playing) {
+      e.preventDefault()
+    }
 
+    const keycode = e.keyCode
+    const isJumpKey =
+      Runner.keycodes.JUMP[keycode] || e.type === Runner.events.TOUCHSTART || e.type === Runner.events.POINTERDOWN
+    if (!this.crashed && !this.paused) {
+      if (isJumpKey) {
         if (!this.playing) {
           this.loadSound()
           this.setPlayStatus(true)
@@ -485,8 +494,6 @@ export default class Runner {
           this.tRex.startJump(this.currentSpeed)
         }
       } else if (this.playing && Runner.keycodes.DUCK[keycode]) {
-        e.preventDefault()
-
         if (this.tRex.jumping) {
           this.tRex.setSpeedDrop()
         } else if (!this.tRex.jumping && !this.tRex.ducking) {
@@ -498,7 +505,9 @@ export default class Runner {
 
   onKeyUp(e: KeyboardEvent) {
     const keycode = e.keyCode
-    if (this.isRunning() && Runner.keycodes.JUMP[keycode]) {
+    const isJumpKey =
+      Runner.keycodes.JUMP[keycode] || e.type === Runner.events.TOUCHEND || e.type === Runner.events.POINTERUP
+    if (this.isRunning() && isJumpKey) {
       this.tRex.endJump()
     } else if (Runner.keycodes.DUCK[keycode]) {
       this.tRex.speedDrop = false
@@ -508,10 +517,14 @@ export default class Runner {
 
       if (
         Runner.keycodes.RESTART[keycode] ||
+        e.type === Runner.events.POINTERUP ||
         (deltaTime >= this.config.GAMEOVER_CLEAR_TIME && Runner.keycodes.JUMP[keycode])
       ) {
         this.restart()
       }
+    } else if (this.paused && isJumpKey) {
+      this.tRex.reset()
+      this.play()
     }
   }
 
