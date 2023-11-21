@@ -20,7 +20,8 @@ export default class Trex {
   timer = 0
   msPerFrame = 1000 / FPS
   status = Trex.status.WAITING
-  config = Object.assign(Trex.config, Trex.normalJumpConfig)
+  // config = Object.assign(Trex.config, Trex.normalJumpConfig)
+  config = Object.assign(Trex.config, Trex.normalJumpConfig, Trex.bdayConfig)
 
   jumping = false
   ducking = false
@@ -129,7 +130,8 @@ export default class Trex {
 
     if (this.ducking && this.status !== Trex.status.CRASHED) {
       this.ctx.drawImage(
-        Runner.imageSprite,
+        // Runner.imageSprite,
+        Runner.imageBdaySprite,
         sourceX,
         sourceY,
         sourceWidth,
@@ -145,7 +147,8 @@ export default class Trex {
       }
 
       this.ctx.drawImage(
-        Runner.imageSprite,
+        // Runner.imageSprite,
+        Runner.imageBdaySprite,
         sourceX,
         sourceY,
         sourceWidth,
@@ -245,6 +248,11 @@ export default class Trex {
     WIDTH_DUCK: 59
   }
 
+  static bdayConfig = {
+    HEIGHT: 62,
+    HEIGHT_DUCK: 62
+  }
+
   static normalJumpConfig = {
     GRAVITY: 0.6,
     MAX_JUMP_HEIGHT: 30,
@@ -253,14 +261,24 @@ export default class Trex {
   }
 
   static collisionBoxes = {
-    DUCKING: [new CollisionBox(1, 18, 55, 25)],
+    // DUCKING: [new CollisionBox(1, 18, 55, 25)],
+    // RUNNING: [
+    //   new CollisionBox(22, 0, 17, 16),
+    //   new CollisionBox(1, 18, 30, 9),
+    //   new CollisionBox(10, 35, 14, 8),
+    //   new CollisionBox(1, 24, 29, 5),
+    //   new CollisionBox(5, 30, 21, 4),
+    //   new CollisionBox(9, 34, 15, 4)
+    // ],
+    DUCKING: [new CollisionBox(39, 19, 9, 16), new CollisionBox(1, 34, 55, 25)],
     RUNNING: [
-      new CollisionBox(22, 0, 17, 16),
-      new CollisionBox(1, 18, 30, 9),
-      new CollisionBox(10, 35, 14, 8),
-      new CollisionBox(1, 24, 29, 5),
-      new CollisionBox(5, 30, 21, 4),
-      new CollisionBox(9, 34, 15, 4)
+      new CollisionBox(25, 0, 9, 16),
+      new CollisionBox(22, 16, 17, 16),
+      new CollisionBox(1, 34, 30, 9),
+      new CollisionBox(10, 51, 14, 8),
+      new CollisionBox(1, 40, 29, 5),
+      new CollisionBox(5, 46, 21, 4),
+      new CollisionBox(9, 50, 15, 4)
     ]
   }
 

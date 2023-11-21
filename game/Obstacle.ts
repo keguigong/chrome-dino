@@ -37,7 +37,7 @@ export default class Obstacle {
     optXOffset?: number
   ) {
     this.canvas = canvas
-    this.ctx = canvas.getContext("2d") as CanvasRenderingContext2D
+    this.ctx = canvas.getContext("2d")!
     this.spritePos = spritePos
     this.typeConfig = type
     this.gapCoefficient = gapCoefficient
@@ -57,7 +57,7 @@ export default class Obstacle {
       this.size = 1
     }
 
-    this.width = this.typeConfig.width + this.size
+    this.width = this.typeConfig.width * this.size
 
     // Check if obstacle can be positioned at various heights.
     if (Array.isArray(this.typeConfig.yPos)) {
@@ -115,8 +115,9 @@ export default class Obstacle {
     if (this.currentFrame > 0) {
       sourceX += sourceWidth * this.currentFrame
     }
+    const isBdayCake = Obstacle.isBdayCake(this.typeConfig.type)
     this.ctx.drawImage(
-      Runner.imageSprite,
+      isBdayCake ? Runner.imageBdaySprite : Runner.imageSprite,
       sourceX,
       this.spritePos.y,
       sourceWidth * this.size,
@@ -212,6 +213,30 @@ export default class Obstacle {
       numFrames: 2,
       frameRate: 1000 / 6,
       speedOffset: 0.8
+    },
+    {
+      type: "BIRTHDAY_CAKE",
+      width: 33,
+      height: 40,
+      yPos: 90,
+      multipleSpeed: 999,
+      minGap: 100,
+      minSpeed: 0,
+      collisionBoxes: [new CollisionBox(13, 1, 6, 12), new CollisionBox(6, 13, 20, 4), new CollisionBox(3, 18, 27, 19)]
+    },
+    {
+      type: "HP",
+      width: 32,
+      height: 30,
+      yPos: [100, 75, 50],
+      multipleSpeed: 999,
+      minGap: 100,
+      minSpeed: 0,
+      collisionBoxes: [new CollisionBox(0, 0, 32, 30)]
     }
   ]
+
+  static isBdayCake(type: string) {
+    return ["BIRTHDAY_CAKE", "HP"].indexOf(type) > -1
+  }
 }

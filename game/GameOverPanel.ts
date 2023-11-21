@@ -107,7 +107,7 @@ export default class GameOverPanel {
   }
 
   draw() {
-    this.drawGameOverText(GameOverPanel.dimensions)
+    this.drawGameOverText(GameOverPanel.dimensions.ZH)
     this.drawRestartButton()
     this.update()
   }
@@ -162,11 +162,19 @@ export default class GameOverPanel {
     msPerFrame: GameOverPanel.RESTART_ANIM_DURATION / 8
   }
 
-  static dimensions = {
-    TEXT_X: 0, // 文字 "Game Over" 的 x 坐标
-    TEXT_Y: 13,
-    TEXT_WIDTH: 191, // 文字 "Game Over" 的宽度
-    TEXT_HEIGHT: 11,
+  static dimensions: ConfigDict = {
+    EN: {
+      TEXT_X: 0, // 文字 "Game Over" 的 x 坐标
+      TEXT_Y: 13,
+      TEXT_WIDTH: 191, // 文字 "Game Over" 的宽度
+      TEXT_HEIGHT: 11
+    },
+    ZH: {
+      TEXT_X: 0,
+      TEXT_Y: 26,
+      TEXT_WIDTH: 122,
+      TEXT_HEIGHT: 14
+    },
     RESTART_WIDTH: 36, // 重置按钮的宽度
     RESTART_HEIGHT: 32
   }

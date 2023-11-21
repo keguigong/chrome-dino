@@ -1,12 +1,14 @@
-import CollisionBox from "./CollisionBox"
 import DistanceMeter from "./DistanceMeter"
 import GameOverPanel from "./GameOverPanel"
 import Horizon from "./Horizon"
 import Trex from "./Trex"
 import { checkForCollision } from "./collisionDetection"
-import { FPS, IS_HIDPI, IS_IOS, IS_MOBILE, RESOURCE_POSTFIX } from "./varibles"
+import { FPS, IS_HIDPI, IS_IOS, IS_MOBILE } from "./varibles"
 
 const DEFAULT_WIDTH = 600
+const RESOURCE_POSTFIX = "offline-resources-"
+const BDAY_SPRITE_POSTFIX = "offline-bday-sprite-"
+
 export default class Runner {
   spriteDef!: SpritePosDef
 
@@ -63,11 +65,16 @@ export default class Runner {
   loadImages() {
     let scale = "1x"
     this.spriteDef = Runner.spriteDefinition.LDPI
+    let bdaySpriteDef = Runner.bdaySpriteDefinition.LDPI
     if (IS_HIDPI) {
       scale = "2x"
       this.spriteDef = Runner.spriteDefinition.HDPI
+      bdaySpriteDef = Runner.bdaySpriteDefinition.HDPI
     }
+
+    Runner.bdaySpriteDefinition = bdaySpriteDef
     Runner.imageSprite = document.getElementById(RESOURCE_POSTFIX + scale) as HTMLImageElement
+    Runner.imageBdaySprite = document.getElementById(BDAY_SPRITE_POSTFIX + scale) as HTMLImageElement
 
     if (Runner.imageSprite.complete) {
       this.init()
@@ -123,7 +130,8 @@ export default class Runner {
     this.horizon = new Horizon(this.canvas, this.spriteDef, this.dimensions, this.config.GAP_COEFFICIENT)
 
     this.distanceMeter = new DistanceMeter(this.canvas, this.spriteDef.TEXT_SPRITE, this.dimensions.WIDTH)
-    this.tRex = new Trex(this.canvas, this.spriteDef.TREX)
+    // this.tRex = new Trex(this.canvas, this.spriteDef.TREX)
+    this.tRex = new Trex(this.canvas, Runner.bdaySpriteDefinition.TREX)
 
     this.startListening()
     this.update()
@@ -325,6 +333,7 @@ export default class Runner {
       this.setPlayStatus(true)
       this.paused = false
       this.crashed = false
+      this.gameOverPanel.reset()
       this.distanceRan = 0
       this.currentSpeed = this.config.SPEED
       this.time = Date.now()
@@ -516,9 +525,8 @@ export default class Runner {
       let deltaTime = Date.now() - this.time
 
       if (
-        Runner.keycodes.RESTART[keycode] ||
-        e.type === Runner.events.POINTERUP ||
-        (deltaTime >= this.config.GAMEOVER_CLEAR_TIME && Runner.keycodes.JUMP[keycode])
+        deltaTime >= this.config.GAMEOVER_CLEAR_TIME &&
+        (Runner.keycodes.JUMP[keycode] || Runner.keycodes.RESTART[keycode] || e.type === Runner.events.POINTERUP)
       ) {
         this.restart()
       }
@@ -686,6 +694,7 @@ export default class Runner {
   }
 
   static imageSprite: HTMLImageElement
+  static imageBdaySprite: HTMLImageElement
 
   static spriteDefinition = {
     LDPI: {
@@ -732,63 +741,8 @@ export default class Runner {
       RUNNING_1: { x: 88, w: 44, h: 47, xOffset: 0 },
       RUNNING_2: { x: 132, w: 44, h: 47, xOffset: 0 },
       JUMPING: { x: 0, w: 44, h: 47, xOffset: 0 },
-      CRASHED: { x: 220, w: 44, h: 47, xOffset: 0 },
-      COLLISION_BOXES: [
-        new CollisionBox(22, 0, 17, 16),
-        new CollisionBox(1, 18, 30, 9),
-        new CollisionBox(10, 35, 14, 8),
-        new CollisionBox(1, 24, 29, 5),
-        new CollisionBox(5, 30, 21, 4),
-        new CollisionBox(9, 34, 15, 4)
-      ]
+      CRASHED: { x: 220, w: 44, h: 47, xOffset: 0 }
     },
-    /** @type {Array<ObstacleType>} */
-    OBSTACLES: [
-      {
-        type: "CACTUS_SMALL",
-        width: 17,
-        height: 35,
-        yPos: 105,
-        multipleSpeed: 4,
-        minGap: 120,
-        minSpeed: 0,
-        collisionBoxes: [new CollisionBox(0, 7, 5, 27), new CollisionBox(4, 0, 6, 34), new CollisionBox(10, 4, 7, 14)]
-      },
-      {
-        type: "CACTUS_LARGE",
-        width: 25,
-        height: 50,
-        yPos: 90,
-        multipleSpeed: 7,
-        minGap: 120,
-        minSpeed: 0,
-        collisionBoxes: [
-          new CollisionBox(0, 12, 7, 38),
-          new CollisionBox(8, 0, 7, 49),
-          new CollisionBox(13, 10, 10, 38)
-        ]
-      },
-      {
-        type: "PTERODACTYL",
-        width: 46,
-        height: 40,
-        yPos: [100, 75, 50], // Variable height.
-        yPosMobile: [100, 50], // Variable height mobile.
-        multipleSpeed: 999,
-        minSpeed: 8.5,
-        minGap: 150,
-        collisionBoxes: [
-          new CollisionBox(15, 15, 16, 5),
-          new CollisionBox(18, 21, 24, 6),
-          new CollisionBox(2, 14, 4, 3),
-          new CollisionBox(6, 10, 4, 7),
-          new CollisionBox(10, 8, 6, 9)
-        ],
-        numFrames: 2,
-        frameRate: 1000 / 6,
-        speedOffset: 0.8
-      }
-    ],
     BACKGROUND_EL: {
       CLOUD: {
         HEIGHT: 14,
@@ -811,6 +765,21 @@ export default class Runner {
       Y_POS: 125
     },
     LINES: [{ SOURCE_X: 2, SOURCE_Y: 52, WIDTH: 600, HEIGHT: 12, YPOS: 127 }]
+  }
+
+  static bdaySpriteDefinition: any = {
+    LDPI: {
+      TREX: { x: 0, y: 0 },
+      BIRTHDAY_CAKE: { x: 384, y: 23 },
+      BALLOON: { x: 417, y: 29 },
+      HP: { x: 433, y: 33 }
+    },
+    HDPI: {
+      TREX: { x: 0, y: 0 },
+      BIRTHDAY_CAKE: { x: 768, y: 46 },
+      BALLOON: { x: 834, y: 58 },
+      HP: { x: 866, y: 66 }
+    }
   }
 }
 
