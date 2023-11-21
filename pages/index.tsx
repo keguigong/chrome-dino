@@ -33,8 +33,10 @@ export default function Home() {
         </div>
       </div>
       <div id="offline-resources">
-        <img id="offline-resources-1x" src={`${assetPrefix}/sprite@1x.png`} alt="offline-resources-1x" />
-        <img id="offline-resources-2x" src={`${assetPrefix}/sprite@2x.png`} alt="offline-resources-2x" />
+        <img id="offline-resources-1x" src={`${assetPrefix}/sprite-zh@1x.png`} alt="offline-resources-1x" />
+        <img id="offline-resources-2x" src={`${assetPrefix}/sprite-zh@2x.png`} alt="offline-resources-2x" />
+        <img id="offline-bday-sprite-1x" src={`${assetPrefix}/offline-bday-sprite@1x.png`} alt="offline-bday-sprite-1x" />
+        <img id="offline-bday-sprite-2x" src={`${assetPrefix}/offline-bday-sprite@2x.png`} alt="offline-bday-sprite-2x" />
         <div id="audio-resources">
           <audio
             id="offline-sound-press"

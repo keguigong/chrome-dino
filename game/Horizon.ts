@@ -49,7 +49,10 @@ export default class Horizon {
   }
 
   addCloud() {
-    this.clouds.push(new Cloud(this.canvas, this.spritePos.CLOUD, this.dimensions.WIDTH))
+    const balloon = getRandomNum(1, 10) >= 5
+    const spritePos = balloon ? Runner.bdaySpriteDefinition.BALLOON : this.spritePos.CLOUD
+    const cloud = new Cloud(this.canvas, spritePos, this.dimensions.WIDTH, balloon)
+    this.clouds.push(cloud)
   }
 
   updateCloud(deltaTime: number, speed: number) {
@@ -84,12 +87,15 @@ export default class Horizon {
     if (this.duplicateObstacleCheck(obstacleType.type) || currentSpeed < obstacleType.minSpeed) {
       this.addNewObstacle(currentSpeed)
     } else {
-      let obstacleSpritePos = this.spritePos[obstacleType.type]
+      const isBdayObstacle = Obstacle.isBdayCake(obstacleType.type)
+      let spritePos = isBdayObstacle
+        ? Runner.bdaySpriteDefinition[obstacleType.type]
+        : this.spritePos[obstacleType.type]
 
       this.obstacles.push(
         new Obstacle(
           this.canvas,
-          obstacleSpritePos,
+          spritePos,
           obstacleType,
           this.dimensions,
           this.gapCoeffecient,

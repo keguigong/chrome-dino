@@ -9,8 +9,6 @@ export const IS_IOS = typeof window != "undefined" ? /CriOS/.test(window.navigat
 
 export const IS_MOBILE = typeof window != "undefined" ? /Android/.test(window.navigator.userAgent) || IS_IOS : false
 
-export const RESOURCE_POSTFIX = "offline-resources-"
-
 export const getRandomNum = (min: number, max: number) => {
   return Math.floor(Math.random() * (max - min + 1)) + min
 }

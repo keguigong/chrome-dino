@@ -12,11 +12,19 @@ export default class Cloud {
   remove = false
   cloudGap = getRandomNum(Cloud.config.MIN_CLOUD_GAP, Cloud.config.MAX_CLOUD_GAP)
 
-  constructor(canvas: HTMLCanvasElement, spritePos: Position, containerWidth: number) {
+  balloon = false
+  config = Cloud.config
+
+  constructor(canvas: HTMLCanvasElement, spritePos: Position, containerWidth: number, balloon?: boolean) {
     this.canvas = canvas
     this.ctx = canvas.getContext("2d") as CanvasRenderingContext2D
     this.spritePos = spritePos
     this.containerWidth = containerWidth
+
+    if (balloon) {
+      this.balloon = balloon
+      this.config = { ...Cloud.config, ...Cloud.balloonConfig }
+    }
 
     this.xPos = containerWidth
     this.yPos = 0
@@ -31,22 +39,22 @@ export default class Cloud {
 
   protected draw() {
     this.ctx.save()
-    let sourceWidth = Cloud.config.WIDTH
-    let sourceHeight = Cloud.config.HEIGHT
+    let sourceWidth = this.config.WIDTH
+    let sourceHeight = this.config.HEIGHT
     if (IS_HIDPI) {
       sourceWidth *= 2
       sourceHeight *= 2
     }
     this.ctx.drawImage(
-      Runner.imageSprite,
+      this.balloon ? Runner.imageBdaySprite : Runner.imageSprite,
       this.spritePos.x,
       this.spritePos.y,
       sourceWidth,
       sourceHeight,
       this.xPos,
       this.yPos,
-      Cloud.config.WIDTH,
-      Cloud.config.HEIGHT
+      this.config.WIDTH,
+      this.config.HEIGHT
     )
     this.ctx.restore()
   }
@@ -63,7 +71,7 @@ export default class Cloud {
   }
 
   protected isVisible() {
-    return this.xPos + Cloud.config.WIDTH > 0
+    return this.xPos + this.config.WIDTH > 0
   }
 
   static config = {
@@ -76,5 +84,10 @@ export default class Cloud {
     BG_CLOUD_SPEED: 0.2,
     CLOUD_FREQUENCY: 0.5,
     MAX_CLOUDS: 6
+  }
+
+  static balloonConfig = {
+    WIDTH: 16,
+    HEIGHT: 34
   }
 }
