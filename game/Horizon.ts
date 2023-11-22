@@ -88,7 +88,11 @@ export default class Horizon {
     // Random obstacles
     let obstacleTypeIndex = getRandomNum(0, Obstacle.types.length - 1)
     let obstacleType = Obstacle.types[obstacleTypeIndex]
-    if (this.duplicateObstacleCheck(obstacleType.type) || currentSpeed < obstacleType.minSpeed) {
+    if (
+      this.duplicateObstacleCheck(obstacleType.type) ||
+      currentSpeed < obstacleType.minSpeed ||
+      (obstacleType.type === "HP" && Math.random() > 0.2)
+    ) {
       this.addNewObstacle(currentSpeed)
     } else {
       const isBdayObstacle = Obstacle.isBdayCake(obstacleType.type)

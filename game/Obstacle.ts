@@ -230,8 +230,8 @@ export default class Obstacle {
       height: 26,
       yPos: [100, 75, 50],
       multipleSpeed: 999,
-      minGap: 100,
-      minSpeed: 0,
+      minGap: 150,
+      minSpeed: 8.5,
       collisionBoxes: [new CollisionBox(0, 0, 26, 24)]
     }
   ]
