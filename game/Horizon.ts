@@ -1,5 +1,6 @@
 import Cloud from "./Cloud"
 import HorizonLine from "./HorizonLine"
+import Mountain from "./Mountain"
 import NightMode from "./NightMode"
 import Obstacle from "./Obstacle"
 import Runner from "./Runner"
@@ -22,6 +23,7 @@ export default class Horizon {
   obstacleHistory: string[] = []
 
   nightMode!: NightMode
+  mountain!: Mountain
 
   constructor(canvas: HTMLCanvasElement, spritePos: SpritePosDef, dimensions: Dimensions, gapCoeffient: number) {
     this.canvas = canvas
@@ -37,12 +39,14 @@ export default class Horizon {
     this.addCloud()
     this.horizonLine = new HorizonLine(this.canvas, this.spritePos.HORIZON)
     this.nightMode = new NightMode(this.canvas, this.spritePos.MOON, this.dimensions.WIDTH)
+    this.mountain = new Mountain(this.canvas, Runner.bdaySpriteDefinition.MOUNTAIN, this.dimensions.WIDTH)
   }
 
   update(deltaTime: number, speed: number, hasObstacles?: boolean, showNightMode: boolean = false) {
     this.horizonLine.update(deltaTime, speed)
     this.nightMode.update(showNightMode)
     this.updateCloud(deltaTime, speed)
+    this.mountain.update()
     if (hasObstacles) {
       this.updateObstacles(deltaTime, speed)
     }
@@ -150,5 +154,6 @@ export default class Horizon {
     this.obstacles = []
     this.horizonLine.reset()
     this.nightMode.reset()
+    this.mountain.reset()
   }
 }

@@ -5,6 +5,7 @@ html {
 
 body {
   font-family: system-ui, sans-serif;
+  margin: 0;
   --google-blue-100: rgb(210, 227, 252);
   --google-blue-300: rgb(138, 180, 248);
   --google-blue-600: rgb(26, 115, 232);

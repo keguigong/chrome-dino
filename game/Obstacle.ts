@@ -214,25 +214,25 @@ export default class Obstacle {
       frameRate: 1000 / 6,
       speedOffset: 0.8
     },
-    {
-      type: "BIRTHDAY_CAKE",
-      width: 33,
-      height: 40,
-      yPos: 90,
-      multipleSpeed: 999,
-      minGap: 100,
-      minSpeed: 0,
-      collisionBoxes: [new CollisionBox(13, 1, 6, 12), new CollisionBox(6, 13, 20, 4), new CollisionBox(3, 18, 27, 19)]
-    },
+    // {
+    //   type: "BIRTHDAY_CAKE",
+    //   width: 33,
+    //   height: 40,
+    //   yPos: 90,
+    //   multipleSpeed: 999,
+    //   minGap: 100,
+    //   minSpeed: 0,
+    //   collisionBoxes: [new CollisionBox(13, 1, 6, 12), new CollisionBox(6, 13, 20, 4), new CollisionBox(3, 18, 27, 19)]
+    // }
     {
       type: "HP",
-      width: 32,
-      height: 30,
+      width: 28,
+      height: 26,
       yPos: [100, 75, 50],
       multipleSpeed: 999,
       minGap: 100,
       minSpeed: 0,
-      collisionBoxes: [new CollisionBox(0, 0, 32, 30)]
+      collisionBoxes: [new CollisionBox(0, 0, 26, 24)]
     }
   ]
 
