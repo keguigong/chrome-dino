@@ -270,9 +270,9 @@ export default class Trex {
     //   new CollisionBox(5, 30, 21, 4),
     //   new CollisionBox(9, 34, 15, 4)
     // ],
-    DUCKING: [new CollisionBox(39, 19, 9, 16), new CollisionBox(1, 34, 55, 25)],
+    DUCKING: [new CollisionBox(39, 22, 9, 13), new CollisionBox(1, 34, 55, 25)],
     RUNNING: [
-      new CollisionBox(25, 0, 9, 16),
+      new CollisionBox(25, 4, 9, 12),
       new CollisionBox(22, 16, 17, 16),
       new CollisionBox(1, 34, 30, 9),
       new CollisionBox(10, 51, 14, 8),

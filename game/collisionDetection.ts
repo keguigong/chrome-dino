@@ -29,7 +29,7 @@ export function checkForCollision(obstacle: Obstacle, tRex: Trex, optCanvasCtx?:
   }
 
   // Simple outer bounds check.
-  if (true) {
+  if (boxCompare(tRexBox, obstacleBox)) {
     const collisionBoxes = obstacle.collisionBoxes
     let tRexCollisionBoxes = tRex.ducking ? Trex.collisionBoxes.DUCKING : Trex.collisionBoxes.RUNNING
 
@@ -47,7 +47,10 @@ export function checkForCollision(obstacle: Obstacle, tRex: Trex, optCanvasCtx?:
         }
 
         if (crashed) {
-          return [adjTrexBox, adjObstacleBox]
+          return {
+            type: obstacle.typeConfig.type,
+            collisionBoxes: [adjTrexBox, adjObstacleBox]
+          }
         }
       }
     }

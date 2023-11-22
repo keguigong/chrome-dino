@@ -1,5 +1,6 @@
 import DistanceMeter from "./DistanceMeter"
 import GameOverPanel from "./GameOverPanel"
+import HPBar from "./HPBar"
 import Horizon from "./Horizon"
 import Trex from "./Trex"
 import { checkForCollision } from "./collisionDetection"
@@ -50,6 +51,9 @@ export default class Runner {
 
   audioContext!: AudioContext
   soundFx: ConfigDict = {}
+
+  hpBar!: HPBar
+  hp = HPBar.config.MAX_HP
 
   constructor(outerContainerId: string, optConfig?: ConfigDict) {
     this.outerContainerEl = document.querySelector(outerContainerId)!
@@ -126,10 +130,12 @@ export default class Runner {
     Runner.updateCanvasScaling(this.canvas)
     this.outerContainerEl.appendChild(this.containerEl)
 
-    // Load background class Horizon
+    // Load background clas s Horizon
     this.horizon = new Horizon(this.canvas, this.spriteDef, this.dimensions, this.config.GAP_COEFFICIENT)
 
     this.distanceMeter = new DistanceMeter(this.canvas, this.spriteDef.TEXT_SPRITE, this.dimensions.WIDTH)
+
+    this.hpBar = new HPBar(this.canvas, Runner.bdaySpriteDefinition.HP, this.dimensions.WIDTH)
     // this.tRex = new Trex(this.canvas, this.spriteDef.TREX)
     this.tRex = new Trex(this.canvas, Runner.bdaySpriteDefinition.TREX)
 
@@ -192,6 +198,10 @@ export default class Runner {
     }
   }
 
+  collision = false
+  collisionDetection = true
+  collisionSilentTimer = 0
+
   update() {
     this.updatePending = false
     let now = Date.now()
@@ -221,17 +231,34 @@ export default class Runner {
       }
 
       // Check for collisions.
-      let collision = hasObstacles && checkForCollision(this.horizon.obstacles[0], this.tRex)
+      this.collisionSilentTimer += deltaTime
+      const collision = hasObstacles && checkForCollision(this.horizon.obstacles[0], this.tRex)
+      let disableDetection = this.collisionSilentTimer < Runner.config.COLLISION_DETECTION_SILENT_DURATION
 
       if (!collision) {
-        this.distanceRan += (this.currentSpeed * deltaTime) / this.msPerFrame
+        this.distanceRan += (this.currentSpeed / this.msPerFrame) * deltaTime
 
         if (this.currentSpeed < this.config.MAX_SPEED) {
           this.currentSpeed += this.config.ACCELERATION
         }
-      } else {
-        this.gameOver()
+      } else if (!disableDetection) {
+        this.collisionSilentTimer = 0
+
+        if (this.collision !== !!collision) {
+          if (collision.type === "HP") {
+            this.hp = Math.min(this.hp + 1, HPBar.config.MAX_HP)
+          } else if (this.hp - 1 > 0) {
+            this.hp -= 1
+            this.playSound(this.soundFx.HIT)
+          } else {
+            this.hp = 0
+            this.gameOver()
+          }
+        }
       }
+
+      this.collision = !!collision
+      hasObstacles && this.hpBar.update(deltaTime, this.hp)
 
       let playAchievementSound = this.distanceMeter.update(deltaTime, Math.ceil(this.distanceRan))
 
@@ -334,6 +361,14 @@ export default class Runner {
       this.paused = false
       this.crashed = false
       this.gameOverPanel.reset()
+
+      this.hpBar.reset()
+      this.hp = HPBar.config.MAX_HP
+      this.collision = false
+      this.collision = false
+      this.collisionDetection = true
+      this.collisionSilentTimer = 0
+
       this.distanceRan = 0
       this.currentSpeed = this.config.SPEED
       this.time = Date.now()
@@ -352,6 +387,7 @@ export default class Runner {
     this.crashed = true
     this.distanceMeter.achievement = false
 
+    this.hpBar.update(0, this.hp)
     this.tRex.update(100, Trex.status.CRASHED)
 
     if (!this.gameOverPanel) {
@@ -679,7 +715,8 @@ export default class Runner {
     SPEED: 6,
     SPEED_DROP_COEFFICIENT: 3,
     ARCADE_MODE_INITIAL_TOP_POSITION: 35,
-    ARCADE_MODE_TOP_POSITION_PERCENT: 0.1
+    ARCADE_MODE_TOP_POSITION_PERCENT: 0.1,
+    COLLISION_DETECTION_SILENT_DURATION: 825
   }
 
   static normalConfig = {
@@ -772,13 +809,15 @@ export default class Runner {
       TREX: { x: 0, y: 0 },
       BIRTHDAY_CAKE: { x: 384, y: 23 },
       BALLOON: { x: 417, y: 29 },
-      HP: { x: 433, y: 33 }
+      HP: { x: 433, y: 37 },
+      MOUNTAIN: { x: 0, y: 65 }
     },
     HDPI: {
       TREX: { x: 0, y: 0 },
       BIRTHDAY_CAKE: { x: 768, y: 46 },
       BALLOON: { x: 834, y: 58 },
-      HP: { x: 866, y: 66 }
+      HP: { x: 866, y: 74 },
+      MOUNTAIN: { x: 0, y: 130 }
     }
   }
 }

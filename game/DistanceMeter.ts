@@ -6,8 +6,8 @@ export default class DistanceMeter {
   ctx!: CanvasRenderingContext2D
   spritePos!: Position
 
-  x = 0
-  y = 0
+  x = 2
+  y = 2
 
   distance = 0
   maxScore = 0
