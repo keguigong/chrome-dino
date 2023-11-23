@@ -497,8 +497,15 @@ export default class Runner {
   }
 
   stopListening() {
+    // Keys.
     document.removeEventListener(Runner.events.KEYDOWN, this)
     document.removeEventListener(Runner.events.KEYUP, this)
+
+    // Touch / pointer.
+    document.removeEventListener(Runner.events.TOUCHSTART, this)
+    document.removeEventListener(Runner.events.TOUCHEND, this)
+    document.removeEventListener(Runner.events.POINTERDOWN, this)
+    document.removeEventListener(Runner.events.POINTERUP, this)
   }
 
   /** addEventListener default method */
