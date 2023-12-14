@@ -27,6 +27,18 @@ export default function Home() {
           <h1>
             <span>Press space to play</span>
           </h1>
+          <ul>
+            <li>
+              <span>Press <kbd>Space</kbd> / <kbd>↑</kbd> to jump. Release quickly for a small jump.</span>
+            </li>
+            <li>
+              <span>Press <kbd>↓</kbd> while jumping for a faster drop.</span>
+            </li>
+            <li>
+              <span>Press <kbd>↓</kbd> to duck.</span>
+            </li>
+          </ul>
+          <p style={{ textAlign: "center" }}>View at <a href="https://github.com/keguigong/chrome-dino">GitHub</a>.</p>
         </div>
         <div className="runner-container">
           <canvas className="runner-canvas"></canvas>
@@ -35,8 +47,16 @@ export default function Home() {
       <div id="offline-resources">
         <img id="offline-resources-1x" src={`${assetPrefix}/sprite-zh@1x.png`} alt="offline-resources-1x" />
         <img id="offline-resources-2x" src={`${assetPrefix}/sprite-zh@2x.png`} alt="offline-resources-2x" />
-        <img id="offline-bday-sprite-1x" src={`${assetPrefix}/offline-bday-sprite@1x.png`} alt="offline-bday-sprite-1x" />
-        <img id="offline-bday-sprite-2x" src={`${assetPrefix}/offline-bday-sprite@2x.png`} alt="offline-bday-sprite-2x" />
+        <img
+          id="offline-bday-sprite-1x"
+          src={`${assetPrefix}/offline-bday-sprite@1x.png`}
+          alt="offline-bday-sprite-1x"
+        />
+        <img
+          id="offline-bday-sprite-2x"
+          src={`${assetPrefix}/offline-bday-sprite@2x.png`}
+          alt="offline-bday-sprite-2x"
+        />
         <div id="audio-resources">
           <audio
             id="offline-sound-press"

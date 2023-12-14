@@ -1,5 +1,6 @@
 import DistanceMeter from "./DistanceMeter"
 import GameOverPanel from "./GameOverPanel"
+import PressToStart from "./PressToStart"
 import HPBar from "./HPBar"
 import Horizon from "./Horizon"
 import Trex from "./Trex"
@@ -11,16 +12,15 @@ const RESOURCE_POSTFIX = "offline-resources-"
 const BDAY_SPRITE_POSTFIX = "offline-bday-sprite-"
 
 export default class Runner {
-  spriteDef!: SpritePosDef
+  canvas!: HTMLCanvasElement // Canvas object
+  ctx!: CanvasRenderingContext2D // Canvas context
+  spriteDef!: SpritePosDef // Sprite definition
 
   outerContainerEl!: HTMLElement
   containerEl!: HTMLElement
 
-  config: ConfigDict = Runner.config
-  dimensions = Runner.defaultDimensions
-
-  canvas!: HTMLCanvasElement
-  ctx!: CanvasRenderingContext2D
+  config: ConfigDict = Runner.config // Default configuration
+  dimensions = Runner.defaultDimensions // Canvas dimensions used for positioning and scaling
 
   time = Date.now()
   runningTime = 0
@@ -34,26 +34,27 @@ export default class Runner {
   inverTimer = 0 // Night mode start time
   invertTrigger = false
   updatePending = false
-  resizeTimerId_: NodeJS.Timer | null = null
+  resizeTimerId_: NodeJS.Timer | null = null // window resizing delay
 
-  raqId = 0
+  raqId = 0 // requestAnimationFrame
 
+  tRex!: Trex // Paint objects
   horizon!: Horizon
-  playingIntro!: boolean
-
-  msPerFrame = 1000 / FPS
   distanceMeter!: DistanceMeter
+  gameOverPanel!: GameOverPanel
+  pressToStart!: PressToStart
+  hpBar!: HPBar
+
+  playingIntro!: boolean // Playing intro when first start
+
+  msPerFrame = 1000 / FPS // ms per frame
   distanceRan = 0
   highestScore = 0
 
-  tRex!: Trex
-  gameOverPanel!: GameOverPanel
+  audioContext!: AudioContext // Collision sound
+  soundFx: ConfigDict = {} // Sound FX map
 
-  audioContext!: AudioContext
-  soundFx: ConfigDict = {}
-
-  hpBar!: HPBar
-  hp = HPBar.config.MAX_HP
+  hp = HPBar.config.MAX_HP // HP value
 
   constructor(outerContainerId: string, optConfig?: ConfigDict) {
     this.outerContainerEl = document.querySelector(outerContainerId)!
@@ -130,14 +131,12 @@ export default class Runner {
     Runner.updateCanvasScaling(this.canvas)
     this.outerContainerEl.appendChild(this.containerEl)
 
-    // Load background clas s Horizon
-    this.horizon = new Horizon(this.canvas, this.spriteDef, this.dimensions, this.config.GAP_COEFFICIENT)
-
-    this.distanceMeter = new DistanceMeter(this.canvas, this.spriteDef.TEXT_SPRITE, this.dimensions.WIDTH)
-
-    this.hpBar = new HPBar(this.canvas, Runner.bdaySpriteDefinition.HP, this.dimensions.WIDTH)
     // this.tRex = new Trex(this.canvas, this.spriteDef.TREX)
     this.tRex = new Trex(this.canvas, Runner.bdaySpriteDefinition.TREX)
+    this.horizon = new Horizon(this.canvas, this.spriteDef, this.dimensions, this.config.GAP_COEFFICIENT)
+    this.distanceMeter = new DistanceMeter(this.canvas, this.spriteDef.TEXT_SPRITE, this.dimensions.WIDTH)
+    this.pressToStart = new PressToStart(this.canvas, this.spriteDef.TEXT_SPRITE, this.dimensions)
+    this.hpBar = new HPBar(this.canvas, Runner.bdaySpriteDefinition.HP, this.dimensions.WIDTH)
 
     this.startListening()
     this.update()
@@ -258,7 +257,7 @@ export default class Runner {
       }
 
       this.collision = !!collision
-      hasObstacles && this.hpBar.update(deltaTime, this.hp)
+      this.hpBar.update(deltaTime, this.hp)
 
       let playAchievementSound = this.distanceMeter.update(deltaTime, Math.ceil(this.distanceRan))
 
@@ -292,6 +291,17 @@ export default class Runner {
       }
     }
 
+    if (!this.activated) {
+      this.ctx.clearRect(0, 0, this.dimensions.WIDTH, this.dimensions.HEIGHT - 80)
+      this.tRex.update(deltaTime)
+      this.pressToStart.update(deltaTime)
+
+      this.scheduleNextUpdate()
+      return
+    } else {
+      this.pressToStart.update(deltaTime, true)
+    }
+
     if (this.playing || (!this.activated && this.tRex.blinkCount < Runner.config.MAX_BLINK_COUNT)) {
       this.tRex.update(deltaTime)
 
@@ -321,10 +331,11 @@ export default class Runner {
       const messageEl = document.querySelector("#main-message") as HTMLDivElement
       messageEl.style.opacity = "0"
 
-      let keyframes = `@-webkit-keyframes intro {
-          from { width: ${Trex.config.WIDTH}px }
-          to { width: ${this.dimensions.WIDTH}px } +
-        }`
+      // let keyframes = `@-webkit-keyframes intro {
+      //     from { width: ${Trex.config.WIDTH}px }
+      //     to { width: ${this.dimensions.WIDTH}px } +
+      //   }`
+      let keyframes = `@-webkit-keyframes intro {}`
       document.styleSheets[0].insertRule(keyframes, 0)
       this.containerEl.style.webkitAnimation = "intro .4s ease-out 1 both"
       this.containerEl.style.width = this.dimensions.WIDTH + "px"
@@ -714,7 +725,7 @@ export default class Runner {
     GAMEOVER_CLEAR_TIME: 1200,
     INITIAL_JUMP_VELOCITY: 12,
     INVERT_FADE_DURATION: 12000,
-    MAX_BLINK_COUNT: 3,
+    MAX_BLINK_COUNT: Infinity,
     MAX_CLOUDS: 6,
     MAX_OBSTACLE_LENGTH: 3,
     MAX_OBSTACLE_DUPLICATION: 2,

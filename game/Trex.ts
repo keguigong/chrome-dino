@@ -282,7 +282,7 @@ export default class Trex {
     ]
   }
 
-  static BLINK_TIMING = 7000
+  static BLINK_TIMING = 2000
 
   static status = {
     CRASHED: "CRASHED",
@@ -295,7 +295,7 @@ export default class Trex {
   static animFrames: ConfigDict = {
     WAITING: {
       frames: [44, 0],
-      msPerFrame: 1000 / 3
+      msPerFrame: 1000 / 5
     },
     RUNNING: {
       frames: [88, 132],

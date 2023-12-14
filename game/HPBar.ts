@@ -16,6 +16,7 @@ export default class HPBar {
   flashIterations = 0
 
   opacity = 0
+  enterTimer = 0
 
   constructor(canvas: HTMLCanvasElement, spritePos: Position, canvasWidth: number) {
     this.canvas = canvas
@@ -26,7 +27,10 @@ export default class HPBar {
 
   update(deltaTime: number, hp: number) {
     let paint = true
-    if (this.opacity < 1) {
+
+    if (this.enterTimer < HPBar.config.ENTER_DELAY) {
+      this.enterTimer += deltaTime
+    } else if (this.opacity < 1) {
       this.opacity = Math.min(this.opacity + HPBar.config.FADE_SPEED, 1)
     }
 
@@ -119,7 +123,8 @@ export default class HPBar {
     FLASH_ITERATIONS: 3, // 闪动的次数
     MAX_HP: 3,
     HP_UNIT: 1,
-    FADE_SPEED: 0.035 // 淡入淡出的速度
+    FADE_SPEED: 0.035, // 淡入淡出的速度,
+    ENTER_DELAY: 1000 // 显示延时
   }
 
   static dimensions = {

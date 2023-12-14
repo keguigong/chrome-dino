@@ -56,8 +56,8 @@ export default class Mountain {
     this.ctx.restore()
   }
 
-  update() {
-    this.xPos = this.updateXPos(this.xPos, Mountain.config.MOUNTAIN_SPEED)
+  update(deltaTime: number, speed: number) {
+    this.xPos = this.updateXPos(this.xPos, Mountain.config.MOUNTAIN_SPEED * deltaTime)
     this.draw()
   }
 
@@ -73,6 +73,6 @@ export default class Mountain {
   static config = {
     WIDTH: 413,
     HEIGHT: 92,
-    MOUNTAIN_SPEED: 0.1
+    MOUNTAIN_SPEED: 0.025
   }
 }
