@@ -38,7 +38,7 @@ export default function Home() {
               <span>Press <kbd>↓</kbd> to duck.</span>
             </li>
           </ul>
-          <p style={{ textAlign: "center" }}>View at <a href="https://github.com/keguigong/chrome-dino">GitHub</a>.</p>
+          <p style={{ textAlign: "center" }}>View on <a href="https://github.com/keguigong/chrome-dino">GitHub</a>.</p>
         </div>
         <div className="runner-container">
           <canvas className="runner-canvas"></canvas>

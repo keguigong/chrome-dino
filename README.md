@@ -1,3 +1,7 @@
+# Chrome dino
+
+Re-create Chrome Dino game using Canvas and TypeScript.
+
 ## How to use it
 
 Specify a node as root node to contain the canvas, e.g., `#main-frame-error`. Import `Runner` class and then instantiate it with static `getInstance()` method. Remember to remove the listeners after destroyed by invoking `stopListening()` method.
